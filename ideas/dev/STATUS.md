@@ -69,3 +69,5 @@
 - 2026-06-27T09:28:45.864Z | event=diff | stage=dev
 - 2026-06-27T09:32:03.381Z | event=deploy | stack=StaticWebAWSAIStack-dev / cloudfront=https://d2l9b1xmucsb19.cloudfront.net / api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ / commit=fcf9fc2 / sanity=passed / ui_smoke=passed
 - 2026-06-27T09:51:02.768Z | event=deploy | stack=StaticWebAWSAIStack-dev / cloudfront=https://d2l9b1xmucsb19.cloudfront.net / api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ / commit=5ad6183 / sanity=passed / ui_smoke=passed
+- 2026-07-04T10:09:00.792Z | event=ui-smoke | stage=dev / result=passed
+- 2026-07-04T10:09:30.000Z | event=deploy | stack=StaticWebAWSAIStack-dev / cloudfront=https://d2l9b1xmucsb19.cloudfront.net / api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ / commit=63f613c / sanity=passed / ui_smoke=passed / note=smoke re-run green (first run had a transient CloudFront networkidle timeout on home-page)
