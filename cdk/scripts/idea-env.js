@@ -127,9 +127,6 @@ if (command === "deploy") {
   });
   const owner = resolveOptionalOwner(options.owner);
   const ttlDays = resolveOptionalTtlDays(options.ttlDays);
-  const backendStage = options.backendStage
-    ? resolveRequiredStage(options.backendStage)
-    : null;
   const frontendBuildDir = options.frontendBuildDir
     ? path.resolve(ROOT_DIR, options.frontendBuildDir)
     : null;
@@ -137,7 +134,6 @@ if (command === "deploy") {
     stage,
     owner,
     ttlDays,
-    backendStage,
   });
   if (options.dryRun) {
     printDryRun({
@@ -155,10 +151,7 @@ if (command === "deploy") {
 
   withLock(() => {
     runOrFail("npm", ["--prefix", "cdk", "run", "build"], ROOT_DIR);
-    if (!backendStage) {
-      // Full-stack deploy: backend must be installed
-      runOrFail("npm", ["--prefix", "backend", "install"], ROOT_DIR);
-    }
+    runOrFail("npm", ["--prefix", "backend", "install"], ROOT_DIR);
     if (!options.skipBuild) {
       if (frontendBuildDir) {
         // Build the frontend from the specified directory directly
@@ -285,10 +278,7 @@ if (command === "diff" || command === "synth") {
   const subcommand = command === "diff" ? "diff" : "synth";
   const owner = resolveOptionalOwner(options.owner);
   const ttlDays = resolveOptionalTtlDays(options.ttlDays);
-  const backendStage = options.backendStage
-    ? resolveRequiredStage(options.backendStage)
-    : null;
-  const contextArgs = buildCdkContextArgs({ stage, owner, ttlDays, backendStage });
+  const contextArgs = buildCdkContextArgs({ stage, owner, ttlDays });
   if (options.dryRun) {
     printDryRun({
       action: subcommand,
@@ -510,15 +500,6 @@ function parseArgs(args) {
       index += 1;
       continue;
     }
-    if (arg.startsWith("--backend-stage=")) {
-      parsed.backendStage = arg.slice("--backend-stage=".length);
-      continue;
-    }
-    if (arg === "--backend-stage") {
-      parsed.backendStage = String(args[index + 1] || "");
-      index += 1;
-      continue;
-    }
     if (arg.startsWith("--stages=")) {
       parsed.stages = arg.slice("--stages=".length);
       continue;
@@ -678,7 +659,7 @@ function ensureUiSmokeNotSkipped({ commandName, skipUiSmoke }) {
   );
 }
 
-function buildCdkContextArgs({ stage, owner, ttlDays, backendStage }) {
+function buildCdkContextArgs({ stage, owner, ttlDays }) {
   const args = ["--context", `stage=${stage}`];
   if (owner) {
     args.push("--context", `owner=${owner}`);
@@ -686,35 +667,7 @@ function buildCdkContextArgs({ stage, owner, ttlDays, backendStage }) {
   if (ttlDays) {
     args.push("--context", `ttlDays=${ttlDays}`);
   }
-  if (backendStage) {
-    const backendOutputs = loadBackendOutputs(backendStage);
-    const apiEndpoint = String(backendOutputs.APIEndpoint || "").trim();
-    const userPoolId = String(backendOutputs.UserPoolId || "").trim();
-    const cognitoDomain = String(backendOutputs.CognitoDomain || "").trim();
-    if (!apiEndpoint || !userPoolId || !cognitoDomain) {
-      fail(
-        `Backend stage "${backendStage}" is missing required outputs (APIEndpoint, UserPoolId, CognitoDomain). ` +
-          `Run: npm --prefix cdk run idea:deploy -- --stage=${backendStage}  first.`
-      );
-    }
-    args.push("--context", "stackMode=ui-only");
-    args.push("--context", `backendApiEndpoint=${apiEndpoint}`);
-    args.push("--context", `backendUserPoolId=${userPoolId}`);
-    args.push("--context", `backendCognitoDomain=${cognitoDomain}`);
-  }
   return args;
-}
-
-function loadBackendOutputs(backendStage) {
-  const outputsPath = path.join(IDEAS_DIR, backendStage, OUTPUTS_FILE_NAME);
-  if (!fs.existsSync(outputsPath)) {
-    fail(
-      `Backend outputs file not found: ${outputsPath}\n` +
-        `Deploy the backend stack first: npm --prefix cdk run idea:deploy -- --stage=${backendStage}`
-    );
-  }
-  const stackId = buildStackId(backendStage);
-  return readStackOutputsFile({ outputsPath, stackId });
 }
 
 function listIdeaStages() {

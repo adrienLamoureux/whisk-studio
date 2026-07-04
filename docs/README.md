@@ -24,19 +24,19 @@ resolution for their audience. Start a coding agent at the AI column, a person a
 | [`../frontend/ARCHITECTURE.md`](../frontend/ARCHITECTURE.md) | frontend component tree, hook graph, contexts | human |
 | [`../frontend/THEMES.md`](../frontend/THEMES.md) | the 10-palette × dark/light theme system | human |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | code style, PR checklist, commit format | human |
-| [`adr/`](./adr/) | the 7 architecture decisions (001–007) — immutable records | both |
+| [`adr/`](./adr/) | the 8 architecture decisions (001–008) — immutable records | both |
 | [`architecture-current.mmd`](./architecture-current.mmd) · [`agent-turn-loop.mmd`](./agent-turn-loop.mmd) | diagram sources → `bash scripts/render-diagrams.sh` | both |
 | [`proposals/`](./proposals/) | historical design records (shipped) — the *why*, plus still-parked work | both |
 | [`../IDEAS.md`](../IDEAS.md) | live registry of deployed idea stacks (auto-maintained) | both |
 
-## Operational scaffolding (per-idea, required by the idea-environment policy)
-`ideas/<id>/{README,DECISIONS,RUNBOOK,STATUS,IMPROVEMENTS}.md` and `/IMPROVEMENTS.md` track each
-deployed prototype. They are not product docs — see [`AGENTS.md`](../AGENTS.md) "Idea Environment
-Policy". `STATUS.md` files are partly auto-maintained by `idea-env.js`.
+## Operational scaffolding (idea-environment policy)
+`ideas/dev/{README,DECISIONS,RUNBOOK,STATUS,IMPROVEMENTS}.md` and `/IMPROVEMENTS.md` track the one
+deployed environment. They are not product docs — see [`AGENTS.md`](../AGENTS.md) "Idea Environment
+Policy". `STATUS.md` is partly auto-maintained by `idea-env.js`.
 
 ## Anti-duplication rules
 To keep the set non-redundant, each repeated fact has ONE home; other docs link rather than restate:
-- **Deploy commands & modes** → `architecture.md` §4
+- **Deploy command** → `architecture.md` §4
 - **Quality gates** → `testing.md`
 - **Cognito single-source-of-truth + trap** → `AGENTS.md` (rule) / `architecture.md` §6 (detail)
 - **Roadmap / parked work** → `state-of-the-art.md` §12 (proposals link to it)

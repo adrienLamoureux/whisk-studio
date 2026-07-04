@@ -26,14 +26,14 @@ Agent / Companion turn loop — the Bedrock Converse tool-use sequence ([SVG](./
 | Frontend | `frontend/src/` | Full Sakura Bloom React app — Live2D companion, `skr-` CSS system, 10 themes, bottom HUD |
 | Backend API | `backend/index.js`, `backend/routes/**`, `backend/lib/**` | Express app wrapped for Lambda |
 | Runtime config | `frontend/public/config.json` at deploy time, `frontend/src/services/runtime-config.js` | Drives API and Cognito wiring |
-| Infrastructure | `cdk/bin/static-web-aws-ai-stack.ts`, `cdk/lib/*.ts`, `cdk/scripts/*.js` | Full-stack and UI-only deploy modes |
+| Infrastructure | `cdk/bin/static-web-aws-ai-stack.ts`, `cdk/lib/*.ts`, `cdk/scripts/*.js` | Single full-stack deploy |
 | Idea metadata | `IDEAS.md`, `IMPROVEMENTS.md`, `ideas/<idea-id>/**` | Registry, status, decisions, runbooks |
 
 See [`docs/api-spec.md`](./api-spec.md) for the complete endpoint inventory with request/response shapes and public / user / admin access levels.
 
 ## 2. Branch Topology
 
-`main` is the single development branch (backend, frontend, CDK). For new feature work, branch from `main` using the worktree conventions in `AGENTS.md`.
+`main` is the single development branch (backend, frontend, CDK). For new feature work, branch from `main` with a short-lived feature branch and open a PR. There are no design variants or per-idea worktrees.
 
 ## 3. Request And Runtime Flow
 1. CloudFront serves the built frontend and a generated `config.json`.
@@ -48,9 +48,9 @@ See [`docs/api-spec.md`](./api-spec.md) for the complete endpoint inventory with
 5. Express route handlers execute domain logic and call external providers.
 6. Metadata is stored in DynamoDB and user media is stored in S3.
 
-## 4. Deployment Modes
+## 4. Deployment
 
-### 4.1 Full Stack (primary — used for `main`)
+### 4.1 Full Stack (the only stack — deployed from `main`)
 - Stack file: `cdk/lib/static-web-aws-ai-stack.ts`
 - Entry point: `cdk/bin/static-web-aws-ai-stack.ts`
 - Resources created:
@@ -62,21 +62,7 @@ See [`docs/api-spec.md`](./api-spec.md) for the complete endpoint inventory with
   - DynamoDB media table
 - Deploy command: `npm --prefix cdk run idea:deploy -- --stage=dev`
 
-### 4.2 UI-Only Overlay (for design variants)
-- Stack file: `cdk/lib/ui-stack.ts`
-- Activated by `idea:deploy -- --backend-stage=<stage>`
-- Reuses:
-  - backend API endpoint
-  - backend Cognito user pool
-  - backend Cognito domain
-- Creates:
-  - website bucket
-  - CloudFront distribution
-  - a design-specific Cognito app client
-
-The CDK app chooses between the two modes using the `stackMode` context in `cdk/bin/static-web-aws-ai-stack.ts`.
-
-### 4.3 Live2D Asset Deployment
+### 4.2 Live2D Asset Deployment
 Live2D model assets (~50 MB) are excluded from the CDK `BucketDeployment` (which uses a Lambda that would time out). After CDK deploys, `idea-env.js` automatically syncs them:
 ```sh
 aws s3 sync frontend/build/live2d s3://<bucket>/live2d
@@ -214,27 +200,9 @@ See [`frontend/ARCHITECTURE.md`](../frontend/ARCHITECTURE.md) for component tree
 - User-owned media prefix: `users/<sub>/`
 - Authorization helpers enforce that a user can only operate on keys under their own prefix.
 
-## 7. Design Overlay Variants
-
-Other design variants deploy as UI-only stacks pointing at the `dev` backend:
-
-### 7.1 Design-Fusion
-- Solaris-style UI with grouped navigation:
-  - Home, Forge, Storyboard, Showcase, Director, Sound Vault, LoRA Catalog
-- Preserves `sol-` CSS namespace.
-- Route remaps: `/whisk -> /forge`, `/story -> /storyboard`, `/shared -> /showcase`, `/lora -> /director/lora`
-
-### 7.2 Design-Pixnovel
-- Cinematic shell plus quick-generate controls and operations rails.
-- App-level shell logic in `frontend/src/App.js` and `frontend/src/config/pixnovelShellConfig.js`.
-- Preserves pane metadata in `pixnovelShellConfig.js` and the "only masonry scroll animates" motion policy.
-
-Both variants share the `dev` Cognito user pool (`us-east-1_KGfmw3Ykn`) via dedicated app clients. Their `config.json` files must point to the `dev` API and Cognito pool — migrate if they still reference legacy stacks.
-
-## 8. Idea Metadata Model
+## 7. Idea Metadata Model
 - `IDEAS.md` is the top-level registry.
-- `IMPROVEMENTS.md` tracks cross-idea rollouts.
-- Each `ideas/<idea-id>/` folder should contain:
+- The `ideas/dev/` folder contains:
   - `README.md`
   - `DECISIONS.md`
   - `RUNBOOK.md`
@@ -242,12 +210,10 @@ Both variants share the `dev` Cognito user pool (`us-east-1_KGfmw3Ykn`) via dedi
   - `IMPROVEMENTS.md`
   - optional `cdk-outputs.json`
 
-## 9. Validation And Completion Rules
+## 8. Validation And Completion Rules
 
 See `CONTRIBUTING.md` for the full PR checklist and `docs/testing.md` for all quality gates. Backend/CDK changes are only complete after deploy + sanity + UI smoke.
 
-## 10. Current Risks
+## 9. Current Risks
 - Backend test coverage is still ~40% — expand test coverage for new routes.
-- Route contracts are consumed by UI-only overlay branches, so silent contract drift is expensive.
 - `story/illustration-routes.js` is still very large and may need future decomposition.
-- `design-fusion` and `design-pixnovel` config.json may still point to their own old APIs rather than `dev` — migrate on next deploy.

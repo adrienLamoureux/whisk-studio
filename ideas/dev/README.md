@@ -5,8 +5,8 @@
 - Deploy a production-grade React frontend with Live2D companion, 10 themes, and bottom HUD alongside the full backend.
 
 ## Design References
-- Primary UI: Sakura Bloom — deep indigo + pink palette, 10 themes, glassmorphism surfaces.
-- Design overlay variants (`design-fusion`, `design-pixnovel`, etc.) consume the backend contracts from this branch via UI-only stacks.
+- The UI: Sakura Bloom — deep indigo + pink palette, 10 themes, glassmorphism surfaces. It is the
+  one and only design; there are no design overlay variants.
 
 ## Scope
 - In scope:
@@ -14,11 +14,8 @@
   - CDK stacks, deployment helpers, idea registry updates
   - shared docs and documentation
   - Sakura Bloom frontend (`frontend/src/`)
-- Out of scope:
-  - UI-only design variant changes (belong in their respective idea worktrees)
 
 ## Delivery Tracks
-- Plan track: freeze shared backend/runtime contracts before parallel UI work starts.
 - Build track: backend, frontend, and CDK changes land here.
 - Integration/QA track: deploy `dev`, run sanity and UI smoke, then document the result in `STATUS.md`.
 
@@ -46,12 +43,11 @@
 - CDK:
   - `cdk/bin/static-web-aws-ai-stack.ts`
   - `cdk/lib/static-web-aws-ai-stack.ts`
-  - `cdk/lib/ui-stack.ts`
   - `cdk/scripts/idea-env.js`
 
 ## Contract Notes
 - API changes:
-  - all shared backend contract changes must land here before design variant overlays consume them
+  - land all backend contract changes here; keep frontend services in sync in the same PR
 - Runtime config changes:
   - preserve the deployed `config.json` shape (`apiBaseUrl`, `cognito.domain`, `cognito.clientId`, `cognito.userPoolId`, `cognito.region`)
 - Data model/storage changes:

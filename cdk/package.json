@@ -21,8 +21,7 @@
     "idea:synth-all": "node scripts/idea-env.js synth-many --all",
     "idea:deploy-many": "node scripts/idea-env.js deploy-many",
     "idea:diff-many": "node scripts/idea-env.js diff-many",
-    "idea:synth-many": "node scripts/idea-env.js synth-many",
-    "idea:scope-check": "bash ../scripts/check-variant-scope.sh"
+    "idea:synth-many": "node scripts/idea-env.js synth-many"
   },
   "devDependencies": {
     "@types/node": "^22.13.17",

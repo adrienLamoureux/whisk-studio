@@ -19,7 +19,7 @@
 | Domain/helpers | `backend/lib/*.js`, `backend/lib/story-state/`, `backend/lib/agent-tools/` | |
 | Backend config | `backend/config/{models,story-seed-data,lora}.js` | no hardcoded literals in routes |
 | Frontend | `frontend/src/` | CRA, `skr-` CSS, 10 themes |
-| CDK | `cdk/lib/static-web-aws-ai-stack.ts` (full) · `cdk/lib/ui-stack.ts` (UI-only) | |
+| CDK | `cdk/lib/static-web-aws-ai-stack.ts` | single full stack |
 | Deploy CLI | `cdk/scripts/idea-env.js` | `idea:*` npm scripts |
 
 ## DI rules (backend)
@@ -62,7 +62,7 @@ TTS, `activeSessionId` (localStorage `skr-agent-session`). Companion mode refuse
 - `auth.js` resolves `isAdmin` from `cognito:groups` in all 3 claim paths; the `admin` cohort flag
   depends on it.
 - User media served only via expiring S3 signed URLs; ops are scoped to `users/{sub}/`.
-- Cognito is ONE pool `us-east-1_KGfmw3Ykn`; variants get an app client, never their own pool.
+- Cognito is ONE pool `us-east-1_KGfmw3Ykn`, provisioned only by the `dev` stack; all users live there.
 
 ## Conventions
 - `skr-` CSS prefix; tokens in `src/styles/tokens.css`; no inline theming; import API via
@@ -77,6 +77,5 @@ Fix formatting with `npm run format`; if reflow trips the 500-line cap, split th
 
 ## Deploy (one command; full stack from `main`)
 `npm --prefix cdk run idea:deploy -- --stage=dev` — builds both halves, CDK deploy, Live2D `s3 sync`,
-then sanity (6) + Playwright UI smoke (10). UI-only variant: add `--backend-stage=dev` (**never omit**,
-or it spins a rogue full stack). Deploy auto-edits `IDEAS.md` + `ideas/dev/STATUS.md` — commit them.
-Full deploy modes + Cognito SSOT detail: [`architecture.md`](./architecture.md) §4, §6.
+then sanity (6) + Playwright UI smoke (10). Deploy auto-edits `IDEAS.md` + `ideas/dev/STATUS.md` — commit them.
+Deploy + Cognito SSOT detail: [`architecture.md`](./architecture.md) §4, §6.

@@ -45,19 +45,6 @@ const DEFAULT_LOCAL_COGNITO_PORTS = Array.from(
 );
 const LOCAL_AUTH_HOSTS = ["localhost", "127.0.0.1"] as const;
 
-/**
- * CloudFront domains of design-variant stacks that share this backend's
- * Cognito User Pool.  Each variant's config.json points at *this* client, so
- * their callback / logout URLs must be registered here.
- */
-const DESIGN_VARIANT_CLOUDFRONT_DOMAINS = [
-  "d3ei9r5awjyzzr.cloudfront.net", // design-fusion
-  "d1ulh0ke4fvnqg.cloudfront.net", // design-kinetic
-  "d21j30h6jj4n2k.cloudfront.net", // design-pixnovel
-  "d3mv9zsmbqsn48.cloudfront.net", // design-atelier
-  "d17qd3rx45vcxl.cloudfront.net", // design-solaris
-] as const;
-
 const sanitizeDomainPrefix = (value: string) =>
   value
     .toLowerCase()
@@ -564,16 +551,10 @@ export class StaticWebAWSAIStack extends cdk.Stack {
         callbackUrls: [
           ...localCallbackUrls,
           `https://${distribution.domainName}/auth/callback`,
-          ...DESIGN_VARIANT_CLOUDFRONT_DOMAINS.map(
-            (d) => `https://${d}/auth/callback`
-          ),
         ],
         logoutUrls: [
           ...localLogoutUrls,
           `https://${distribution.domainName}/login`,
-          ...DESIGN_VARIANT_CLOUDFRONT_DOMAINS.map(
-            (d) => `https://${d}/login`
-          ),
         ],
       },
       supportedIdentityProviders: [

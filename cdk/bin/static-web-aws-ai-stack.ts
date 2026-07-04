@@ -3,7 +3,6 @@ import * as cdk from "aws-cdk-lib";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { StaticWebAWSAIStack } from "../lib/static-web-aws-ai-stack";
-import { UiOnlyStack } from "../lib/ui-stack";
 import { buildStackId, resolveStageName } from "../lib/stage";
 
 dotenv.config({ path: path.join(__dirname, "../.env") });
@@ -59,10 +58,6 @@ const expiresOn =
     : "";
 const stackId = buildStackId(stage);
 
-const stackMode = String(
-  app.node.tryGetContext("stackMode") || "full"
-).trim();
-
 const sharedTags = {
   Project: "static-web-aws-ai",
   Stage: stage,
@@ -70,39 +65,9 @@ const sharedTags = {
   ...(expiresOn ? { ExpiresOn: expiresOn } : {}),
 };
 
-if (stackMode === "ui-only") {
-  const backendApiEndpoint = String(
-    app.node.tryGetContext("backendApiEndpoint") || ""
-  ).trim();
-  const backendUserPoolId = String(
-    app.node.tryGetContext("backendUserPoolId") || ""
-  ).trim();
-  const backendCognitoDomain = String(
-    app.node.tryGetContext("backendCognitoDomain") || ""
-  ).trim();
-
-  if (!backendApiEndpoint || !backendUserPoolId || !backendCognitoDomain) {
-    throw new Error(
-      "ui-only mode requires --context backendApiEndpoint, " +
-        "--context backendUserPoolId, and --context backendCognitoDomain. " +
-        "Use idea:deploy --backend-stage=<stage> to populate these automatically."
-    );
-  }
-
-  new UiOnlyStack(app, stackId, {
-    stackName: stackId,
-    env: stackEnv,
-    stage,
-    backendApiEndpoint,
-    backendUserPoolId,
-    backendCognitoDomain,
-    tags: sharedTags,
-  });
-} else {
-  new StaticWebAWSAIStack(app, stackId, {
-    stackName: stackId,
-    env: stackEnv,
-    stage,
-    tags: sharedTags,
-  });
-}
+new StaticWebAWSAIStack(app, stackId, {
+  stackName: stackId,
+  env: stackEnv,
+  stage,
+  tags: sharedTags,
+});

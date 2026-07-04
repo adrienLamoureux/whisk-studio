@@ -8,7 +8,6 @@ import {
 
 /**
  * Hook encapsulating animation + music trigger/poll for story scenes.
- * Pattern adapted from design-pixnovel useStoryStudio.js (lines 431-729).
  */
 export default function useSceneMedia(apiBaseUrl) {
   const [mediaMap, setMediaMap] = useState({});

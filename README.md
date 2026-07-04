@@ -15,12 +15,12 @@ Whisk Studio is an AWS-hosted AI creation platform with image, video, story, mus
 ## Architecture At A Glance
 1. CloudFront serves the Sakura Bloom React bundle and a generated `/config.json`.
 2. The frontend resolves `apiBaseUrl` and Cognito settings from `/config.json` at startup.
-3. All design variants authenticate through Cognito Hosted UI + PKCE.
+3. The app authenticates through Cognito Hosted UI + PKCE.
 4. API Gateway invokes the Lambda-wrapped Express backend.
 5. Express routes persist metadata in DynamoDB and media in S3.
 6. Backend routes call Bedrock, Replicate, CivitAI, and Gradio providers when needed.
 
-See `docs/architecture.md` for the full route map, storage keys, and deployment modes.
+See `docs/architecture.md` for the full route map, storage keys, and deployment.
 
 ## Repository Layout
 - `backend/`: Express API, 29 route modules, auth, data access helpers, provider integrations
@@ -46,19 +46,12 @@ See `docs/architecture.md` for the full route map, storage keys, and deployment 
 - Story scene keys: `SESSION#<sessionId>#SCENE#<sceneId>`
 - S3 user isolation: `users/<cognito-sub>/`
 
-## Deployment Modes
+## Deployment
 
-**Full stack** (backend + Sakura frontend + CDK — all from `main`):
+Full stack (backend + Sakura frontend + CDK — all from `main`):
 ```bash
 npm --prefix cdk run idea:deploy -- --stage=dev
 ```
-
-**UI-only design overlay** (separate CloudFront + Cognito app client, shares `dev` backend):
-```bash
-npm --prefix cdk run idea:deploy -- --stage=<idea-id> --backend-stage=dev
-```
-
-Never deploy a design variant without `--backend-stage=dev` — it would create a rogue full stack.
 
 Post-deploy validation is mandatory: `idea:deploy` runs sanity + UI smoke checks automatically.
 
@@ -66,12 +59,7 @@ Post-deploy validation is mandatory: `idea:deploy` runs sanity + UI smoke checks
 
 | Idea ID | CloudFront | Notes |
 |---------|------------|-------|
-| `dev` | `d2l9b1xmucsb19.cloudfront.net` | Full stack — Sakura Bloom frontend |
-| `design-fusion` | `d3ei9r5awjyzzr.cloudfront.net` | UI-only overlay, Solaris shell |
-| `design-pixnovel` | `d21j30h6jj4n2k.cloudfront.net` | UI-only overlay, PixNovel shell |
-| `design-atelier` | `d3mv9zsmbqsn48.cloudfront.net` | UI-only overlay |
-| `design-kinetic` | `d1ulh0ke4fvnqg.cloudfront.net` | UI-only overlay |
-| `design-solaris` | `d17qd3rx45vcxl.cloudfront.net` | UI-only overlay |
+| `dev` | `d2l9b1xmucsb19.cloudfront.net` | Full stack — Sakura Bloom frontend (the only design) |
 
 Shared test credentials: `test@test.com` / `Test1234567@`
 
@@ -108,11 +96,9 @@ node -e "require('./backend/index')"
 ```bash
 npm --prefix cdk run build
 npm --prefix cdk run idea:list
-npm --prefix cdk run idea:init -- --stage=<idea-id> --title="<title>"
-npm --prefix cdk run idea:deploy -- --stage=<idea-id>
-npm --prefix cdk run idea:deploy -- --stage=<idea-id> --backend-stage=<backend-id>
-npm --prefix cdk run idea:ui-local -- --stage=<idea-id>
-npm --prefix cdk run idea:destroy -- --stage=<idea-id>
+npm --prefix cdk run idea:deploy -- --stage=dev
+npm --prefix cdk run idea:ui-local -- --stage=dev
+npm --prefix cdk run idea:destroy -- --stage=dev
 ```
 
 ## Validation Rules
@@ -133,7 +119,7 @@ Start at **[`docs/README.md`](docs/README.md)** — the index that organises eve
 - `CONTRIBUTING.md`: code style, quality gates, PR checklist
 - `docs/api-spec.md`: full API contract (73+ endpoints, request/response shapes)
 - `docs/testing.md`: how to run and write all test layers
-- `docs/adr/`: architecture decision records (001–007)
+- `docs/adr/`: architecture decision records (001–008)
 - `frontend/ARCHITECTURE.md`: component tree, hook graph, CSS system
 
 ## Common Configuration
@@ -152,4 +138,3 @@ Keep secrets in env or secret stores, never in committed files.
 - **Unauthorized after login**: check that the deployed `config.json` points to the matching API and Cognito pool; hard refresh and sign in again; clear the `whisk_auth_tokens` session storage key if token state is stale
 - **Slow stack updates**: `BucketDeployment` and CloudFront invalidation can take several minutes
 - **Seeding issues**: use `--source-stack=<stack-name>` when the source stack name does not follow stage naming
-- **Design variant shows old API**: the variant's S3 `config.json` may still reference an old endpoint; redeploy with `--stage=<id> --backend-stage=dev` to regenerate it

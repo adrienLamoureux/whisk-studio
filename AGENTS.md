@@ -23,15 +23,14 @@
 - Frontend: `frontend/src/` — full Sakura Bloom React app (Live2D companion, `skr-` CSS system, 10 themes, bottom HUD).
 - Three UI modes via `ModeContext` (localStorage `skr-mode`): `dashboard` | `agent` | `companion`.
   Agent mode = Bedrock Converse + a 9-tool fleet (`backend/lib/agent-tools.js`); companion mode refuses admin ops.
-- Infra: AWS CDK 2.x in `cdk/`, with both full-stack and UI-only deployment modes.
+- Infra: AWS CDK 2.x in `cdk/` — a single full-stack deploy (`StaticWebAWSAIStack-dev`).
 - AI scripts: Python notebooks/scripts in `ai/` only; they are not part of runtime execution paths.
 - For the dense agent reference (paths, DynamoDB SK namespaces, invariants), see `docs/ai-context.md`.
 
 ## Active Branch
 
 `main` is the only active development branch. All backend, frontend, and CDK changes go here.
-
-Other design variant branches (`codex/design-fusion/code`, `codex/design-pixnovel/code`) remain alive as UI-only overlays pointing at the `main` backend — they are not under active development.
+There are no design variants or per-idea worktrees — Sakura Bloom is the one and only design.
 
 ## Live Idea Stacks
 
@@ -48,28 +47,21 @@ Doc navigation hub: `docs/README.md` (audience × depth index).
 
 ## Cognito Ownership — CRITICAL
 
-**Cognito is provisioned exclusively by the `dev` stack (deployed from `main`).** UI-only overlay stacks NEVER get their own Cognito user pool.
+**Cognito is provisioned exclusively by the `dev` stack (deployed from `main`).**
 
 - The one and only user pool is `us-east-1_KGfmw3Ykn` (dev stack).
 - The one and only admin group is `admin` inside that pool.
-- All users for all design variants must be created in `us-east-1_KGfmw3Ykn`.
-- Each design variant gets its own **app client** inside the dev pool — not its own pool.
-- **TRAP**: A variant's browser login URL may still show an old domain (e.g. `whiskstudio-alx-design-sakura-*`) if its `config.json` was never migrated from a legacy full-stack deploy. That URL belongs to a stale pool — do NOT create users there.
-- To verify which pool a variant is using: `aws s3 cp s3://<websiteBucket>/config.json -` and check `cognito.userPoolId`. It must always be `us-east-1_KGfmw3Ykn`.
-- If it isn't, migrate: create a new app client in the dev pool for the variant's CloudFront callback URL, rewrite `config.json` in S3, invalidate CloudFront.
+- All users must be created in `us-east-1_KGfmw3Ykn`.
+- To verify which pool the live site uses: `aws s3 cp s3://<websiteBucket>/config.json -` and check `cognito.userPoolId`. It must always be `us-east-1_KGfmw3Ykn`.
 
 ## Idea Environment Policy
-- Every prototype uses a unique idea ID and a dedicated stack name `StaticWebAWSAIStack-<idea-id>`.
-- Each idea folder must keep `README.md`, `DECISIONS.md`, `RUNBOOK.md`, `STATUS.md`, and `IMPROVEMENTS.md`.
+- The idea-env tooling deploys a single full stack: `StaticWebAWSAIStack-dev` via `cdk/lib/static-web-aws-ai-stack.ts`.
+- The `dev` idea folder keeps `README.md`, `DECISIONS.md`, `RUNBOOK.md`, `STATUS.md`, and `IMPROVEMENTS.md`.
 - Keep `/IDEAS.md` updated as the top-level registry.
-- Keep `/IMPROVEMENTS.md` updated for shared rollouts.
-- CDK supports two deploy modes:
-  - full stack: `StaticWebAWSAIStack` via `cdk/lib/static-web-aws-ai-stack.ts`
-  - UI-only overlay: `UiOnlyStack` via `cdk/lib/ui-stack.ts`, driven by `idea:deploy -- --backend-stage=<stage>`
 - Standard commands:
 `npm --prefix cdk run idea:list`
 `npm --prefix cdk run idea:init -- --stage=<idea-id> --title="<title>"`
-`npm --prefix cdk run idea:deploy -- --stage=<idea-id> [--owner="<owner>"] [--ttl-days=<days>] [--backend-stage=<stage>]`
+`npm --prefix cdk run idea:deploy -- --stage=<idea-id> [--owner="<owner>"] [--ttl-days=<days>]`
 `npm --prefix cdk run idea:ui-local -- --stage=<idea-id> [--port=<port>] [--print-env] [--open]`
 `npm --prefix cdk run idea:seed -- --target-stage=<idea-id> [--source-stage=<source-stage>] [--source-stack=<stack-name>]`
 `npm --prefix cdk run idea:destroy -- --stage=<idea-id>`
@@ -84,31 +76,11 @@ Doc navigation hub: `docs/README.md` (audience × depth index).
 
 ## Parallel Workflow Policy
 - Use single-thread execution for small changes that touch one area.
-- Use `planner -> workers -> integrator` for medium/large tasks.
-- Run each worker in a separate Git worktree and branch from `main`.
-- Branch naming: `codex/<idea-id>-<slice>`.
-- Freeze contracts before workers start.
-- Default long-lived working branch: `main`.
-- Human workflow: open PR from feature branch to `main` and merge manually.
-- When creating worktrees, branch from `main`.
-- Standard worktree layout:
-  - `../wt/<idea-id>/plan`
-  - `../wt/<idea-id>/code`
-  - `../wt/<idea-id>/integrate`
-- Standard branch layout:
-  - `codex/<idea-id>/plan`
-  - `codex/<idea-id>/code`
-  - `codex/<idea-id>/integrate`
-- Bootstrap commands:
-`git worktree add ../wt/<idea-id>/plan -b codex/<idea-id>/plan main`
-`git worktree add ../wt/<idea-id>/code -b codex/<idea-id>/code main`
-`git worktree add ../wt/<idea-id>/integrate -b codex/<idea-id>/integrate main`
-- Worktree responsibilities:
-  - `plan`: freeze contracts, split slices, update `ideas/<idea-id>/README.md` and `DECISIONS.md`
-  - `code`: implement isolated slices only, no cross-slice refactors
-  - `integrate`: merge validated slices, run gates, deploy/seed, update `STATUS.md`
-- Merge order:
-`codex/<idea-id>/plan -> codex/<idea-id>/code -> codex/<idea-id>/integrate -> main`
+- For medium/large tasks the `planner -> workers -> integrator` roles below still apply, run
+  sequentially on `main` — there are no per-idea worktrees or `codex/*` variant branches anymore.
+- Freeze contracts before implementation starts.
+- Default long-lived working branch: `main`. Use short-lived feature branches off `main` and open
+  a PR to merge manually.
 
 ## Planner Required Output
 1. Problem statement and non-goals.

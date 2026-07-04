@@ -292,7 +292,6 @@ Navigation hub: [`docs/README.md`](./README.md) — organises docs by audience (
 **Platform hardening**
 - Lift backend coverage past ~40% (new routes are the thinnest)
 - Decompose the still-large `story/illustration-routes.js`
-- Confirm `design-fusion` / `design-pixnovel` `config.json` point at the `dev` API/Cognito
 
 ---
 

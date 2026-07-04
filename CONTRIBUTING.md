@@ -81,11 +81,10 @@ See `docs/testing.md` for the full gate table with pass conditions, coverage tar
 
 ## Deployment Notes
 
-See `docs/architecture.md` (§4) for full deployment modes, commands, and the Live2D asset sync step.
+See `docs/architecture.md` (§4) for the deploy command and the Live2D asset sync step.
 
 Quick reference:
-- Full stack: `npm --prefix cdk run idea:deploy -- --stage=dev`
-- UI-only variant: `npm --prefix cdk run idea:deploy -- --stage=<design-id> --backend-stage=dev` (always pass `--backend-stage=dev`)
+- Full stack (the only stack): `npm --prefix cdk run idea:deploy -- --stage=dev`
 
 ---
 
