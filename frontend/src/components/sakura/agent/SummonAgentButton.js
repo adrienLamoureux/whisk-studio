@@ -2,9 +2,10 @@
  * SummonAgentButton — cross-mode handoff button in Dashboard Forge.
  *
  * Copies the user's current form state (prompt at minimum, plus optional
- * style/aspect) into a localStorage stash, then flips mode to "agent" so
- * the next render mounts AgentStage with the user's draft already in the
- * composer. Equivalent to "Tweak in Atelier" going the other direction.
+ * style/aspect) into a localStorage stash, then flips mode to "companion" so
+ * the next render mounts the Live2D-central CompanionStage with the user's
+ * draft already in the composer (the shared AgentContext consumes the stash).
+ * Equivalent to "Tweak in Atelier" going the other direction.
  *
  * Hidden when the prompt is empty (nothing useful to hand off).
  */
@@ -26,9 +27,9 @@ export default function SummonAgentButton({ prompt, style, aspect, className = "
         JSON.stringify({ prompt: trimmed, style, aspect, at: Date.now() })
       );
     } catch {
-      // ignore quota / private mode — agent mode will still flip, just no prefill
+      // ignore quota / private mode — the mode still flips, just no prefill
     }
-    setMode("agent");
+    setMode("companion");
   };
 
   return (

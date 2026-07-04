@@ -114,16 +114,23 @@ The one operational nuance: Live2D model assets (~50 MB) are excluded from CDK's
 
 ---
 
-## 5. The three modes (the product spine)
+## 5. The two modes (the product spine)
 
 | Mode | Surface | Who drives | Admin ops |
 |------|---------|-----------|-----------|
 | **Dashboard** | Classic forms (Forge, Chronicle, Sanctum) | User clicks | ✅ (Sanctum) |
-| **Agent** (`/atelier`) | Manga-panel chat + tools | User ↔ agent | ✅ |
-| **Companion** (v0) | Full-viewport character takeover | Character-led conversation | ❌ **refused by design** |
+| **Companion drive** | Full-viewport, Live2D-central: character + the tool-calling agent stream | Character-led conversation | ❌ **refused by design** |
 
-Companion Mode is the newest pillar. When active it replaces all conventional navigation:
-the character is the entire interface. The system-prompt addendum biases toward narrative
+The Companion drive is where generation-by-conversation happens: the Live2D character is
+dominant on the left, the agent's turn stream + tool-result cards sit on the right, one
+composer at the bottom. It runs the *same* tool-calling agent detailed in §6. Earlier there
+was also a separate `agent` mode — a Live2D-less manga stream that ran *alongside* the
+floating companion (a different, tool-less chat), so the user faced two chat boxes and two
+AIs at once. That standalone panel was folded into the companion drive (ADR-009): one
+character-driven surface, the Live2D central while the agent generates.
+
+When active the drive replaces conventional navigation (a lighter-chrome bottom HUD keeps
+Realm/Atelier/Chronicle/Sanctum reachable). The system-prompt addendum biases toward narrative
 tone and on-screen voice confirmation, and hard-codes a refusal for any admin/Director
 operation — *"That one's behind the Director's desk — I can't help from here. Want me to
 drop you into the dashboard?"* Non-admin actions (generate, browse your library, change
@@ -310,6 +317,7 @@ Navigation hub: [`docs/README.md`](./README.md) — organises docs by audience (
   abuse profiles; independent counters let each roll over and be tuned on its own.
 - **Why validate prefs on read?** The value flows back into the system prompt — treating
   stored state as untrusted closes a self-injection loop most apps miss.
-- **Why three modes off one backend?** The expensive part (tools, memory, limits, providers)
-  is written once; dashboard/agent/companion are three presentations of the same engine,
-  which is why companion mode shipped as a v0 skeleton in a single increment.
+- **Why two modes off one backend?** The expensive part (tools, memory, limits, providers)
+  is written once; dashboard and the companion drive are two presentations of the same engine.
+  The standalone agent panel was folded into the Live2D-central companion drive so there is one
+  character-driven surface instead of two overlapping ones (ADR-009).

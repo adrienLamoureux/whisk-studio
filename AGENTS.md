@@ -21,8 +21,10 @@
 - Backend domain/helpers: `backend/lib/*.js` plus `backend/lib/story-state/` and `backend/lib/agent-tools/`.
 - Backend config: `backend/config/models.js`, `backend/config/story-seed-data.js`, `backend/config/lora.js`.
 - Frontend: `frontend/src/` — full Sakura Bloom React app (Live2D companion, `skr-` CSS system, 10 themes, bottom HUD).
-- Three UI modes via `ModeContext` (localStorage `skr-mode`): `dashboard` | `agent` | `companion`.
-  Agent mode = Bedrock Converse + a 9-tool fleet (`backend/lib/agent-tools.js`); companion mode refuses admin ops.
+- Two UI modes via `ModeContext` (localStorage `skr-mode`): `dashboard` | `companion`.
+  `companion` is the single character-driven drive surface (Live2D-central `CompanionStage`) that
+  runs the tool-calling agent = Bedrock Converse + a 9-tool fleet (`backend/lib/agent-tools.js`) and
+  refuses admin ops. The old standalone `agent` mode was folded in — ADR-009 (backend agent unchanged).
 - Infra: AWS CDK 2.x in `cdk/` — a single full-stack deploy (`StaticWebAWSAIStack-dev`).
 - AI scripts: Python notebooks/scripts in `ai/` only; they are not part of runtime execution paths.
 - For the dense agent reference (paths, DynamoDB SK namespaces, invariants), see `docs/ai-context.md`.

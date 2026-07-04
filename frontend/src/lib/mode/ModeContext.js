@@ -1,13 +1,18 @@
 /**
- * ModeContext — global UI mode toggle (dashboard | agent | companion).
+ * ModeContext — global UI mode toggle (dashboard | companion).
  *
  * Persisted to localStorage under `skr-mode`. Mode semantics:
- *   - "dashboard" — traditional form-driven UI (default)
- *   - "agent"     — route-scoped to /atelier, manga-panel scroll, dominant
- *                   tool use. Other routes ignore the flag.
- *   - "companion" — global takeover. App shell (TopBar, BottomHUD,
- *                   CompanionPanel) is suppressed; CompanionStage takes
- *                   the whole viewport. Conversation IS the interface.
+ *   - "dashboard" — traditional form-driven UI (default). The floating
+ *                   CompanionPanel provides the ambient Live2D presence.
+ *   - "companion" — the single character-driven "drive" surface. App shell
+ *                   (sidebar, CompanionPanel) is suppressed; CompanionStage
+ *                   takes the viewport with the Live2D dominant and the
+ *                   tool-calling agent stream beside it. Conversation IS the
+ *                   interface. A lighter-chrome bottom HUD keeps navigation.
+ *
+ * The former standalone "agent" mode (a Live2D-less manga stream that ran
+ * alongside the floating companion) was folded into "companion" — see
+ * ADR-009. A stored "agent" value falls back to "dashboard" via VALID_MODES.
  *
  * Usage:
  *   const { mode, setMode, toggleMode } = useMode();
@@ -16,7 +21,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "skr-mode";
-const VALID_MODES = ["dashboard", "agent", "companion"];
+const VALID_MODES = ["dashboard", "companion"];
 const DEFAULT_MODE = "dashboard";
 
 const ModeContext = createContext({
@@ -64,7 +69,7 @@ export function ModeProvider({ children }) {
   }, []);
 
   const toggleMode = useCallback(() => {
-    setMode(mode === "agent" ? "dashboard" : "agent");
+    setMode(mode === "companion" ? "dashboard" : "companion");
   }, [mode, setMode]);
 
   // Keep the data-attribute in sync on hydrate so CSS can target the current mode

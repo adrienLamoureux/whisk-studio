@@ -27,6 +27,7 @@ import { AgentProvider } from "./lib/agent/AgentContext";
 import CompanionStage from "./components/sakura/companion-mode/CompanionStage";
 import { NotificationProvider } from "./components/sakura/NotificationStack";
 import { getAuthToken } from "./utils/authTokens";
+import NAV_ITEMS from "./lib/nav/navItems";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -36,15 +37,6 @@ import Director from "./pages/Director";
 import Story from "./pages/Story";
 import StoryMusicLibrary from "./pages/StoryMusicLibrary";
 import AuthCallback from "./pages/AuthCallback";
-/* ─── Navigation (Bottom HUD) ─── */
-
-const NAV_ITEMS = [
-  { label: "Realm", path: "/", icon: "✦", isPublic: true },
-  { label: "Atelier", path: "/atelier", icon: "◈", isPublic: false },
-  { label: "Chronicle", path: "/chronicle", icon: "▤", isPublic: false },
-  { label: "Sanctum", path: "/sanctum", icon: "⚙", requiredRole: "admin" },
-];
-
 /* ─── Protected Route ─── */
 
 function ProtectedRoute({ children }) {

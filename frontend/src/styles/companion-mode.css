@@ -57,6 +57,40 @@
   box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.22);
 }
 
+/* ── Top-left meta strip — memory badge, session picker, export ────────── */
+.skr-companion-stage-meta {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Lighter-chrome bottom HUD ─────────────────────────────────────────────
+ * Reuses .skr-hud markup but anchors bottom-left so it clears the composer
+ * under the right column (the global rule centres it, which would overlap).
+ * The global .skr-hud is desktop-hidden (min-width:781px) because the shell
+ * uses the left Sidebar there — but this takeover has no sidebar, so force
+ * the nav visible on desktop (higher specificity beats the global hide).
+ */
+.skr-companion-hud {
+  left: 18px;
+  right: auto;
+  transform: none;
+  z-index: 6;
+}
+.skr-companion-hud .skr-hud-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+@media (min-width: 781px) {
+  .skr-companion-stage .skr-companion-hud { display: block; }
+}
+
 .skr-companion-stage-layout {
   position: relative;
   z-index: 1;
@@ -121,6 +155,10 @@
 /* ── Mobile — stack Hiyori on top, chat on bottom ─────────────────────── */
 @media (max-width: 768px) {
   .skr-companion-stage-layout { flex-direction: column; }
+  /* Mobile stacks the composer full-width at the bottom — hide the floating
+     HUD so it can't overlap it; exit ✕ still returns to the dashboard. */
+  .skr-companion-hud { display: none; }
+  .skr-companion-stage-meta { gap: 6px; top: 10px; left: 10px; }
   .skr-companion-canvas-side {
     flex: 0 0 40vh;
     border-right: none;

@@ -69,14 +69,16 @@ Admin routes redirect to `/` when the user lacks the `admin` group.
 - Exposes: `CompanionActions`, `useCompanion()` hook, `dispatch(action)`.
 
 ### ModeProvider (`src/lib/mode/ModeContext.js`)
-- Switches the shell between three UI modes: `"dashboard"` | `"agent"` | `"companion"`. Persisted to `localStorage["skr-mode"]`.
+- Switches the shell between two UI modes: `"dashboard"` | `"companion"`. Persisted to `localStorage["skr-mode"]`.
 - Triggers the `.skr-mode-transition` ink-wash overlay on `<html>` whenever the mode flips (600ms keyframe).
-- `agent` is route-scoped: only `/atelier` honors it; other routes render Dashboard. `companion` is a
-  full-viewport takeover (`CompanionStage`) that replaces all routing and refuses admin operations.
+- `companion` is the single character-driven "drive" surface: a full-viewport takeover (`CompanionStage`)
+  with the Live2D dominant and the tool-calling agent stream beside it. It replaces routing (a lighter-chrome
+  bottom HUD keeps nav reachable) and refuses admin operations. The former standalone `agent` mode (a
+  Live2D-less manga stream) was folded in — ADR-009; a stored `"agent"` falls back to `dashboard`.
 - Exposes: `useMode()` → `{ mode, setMode, toggleMode }`.
 
 ### AgentProvider (`src/lib/agent/AgentContext.js`)
-- Owns the manga-panel turn stream for Agent mode. Mounted globally inside `ModeProvider`.
+- Owns the manga-panel turn stream rendered by the companion drive surface. Mounted globally inside `ModeProvider`.
 - Maintains a serial submit queue so users can type-ahead while a prior turn is in flight.
 - Drives staged "thinking…" labels client-side (`THINKING_STAGES`) so latency feels eventful.
 - Renders a canned greeting (`greet()`) on mount with no LLM round-trip.
@@ -124,7 +126,7 @@ src/styles/
   reset.css          → minimal CSS reset
   layout.css         → page shell, topbar, bottom HUD, grid helpers
   components.css     → .skr-card, .skr-btn, .skr-input, .skr-badge, etc.
-  agent.css          → Agent mode primitives (manga panel, composer, mode toggle, memory badge)
+  agent.css          → agent stream primitives used by the companion drive (manga panel, composer, mode toggle, memory badge)
   animations.css     → keyframes and transition utilities (incl. ink-wash, speed-lines)
   theme-switcher.css → ThemeSwitcher component-specific styles
   login.css          → LoginModal styles

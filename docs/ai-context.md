@@ -44,9 +44,12 @@
 | `PRESET#{STORY,CHARACTER,PROMPT_HELPER}` | seed content |
 
 ## Modes (frontend)
-`ModeContext` (localStorage `skr-mode`) ∈ `dashboard` | `agent` | `companion`; swaps the whole shell.
-`AgentContext` owns turn stream, serial submit queue, intent confirm/abort, slash commands, voice,
-TTS, `activeSessionId` (localStorage `skr-agent-session`). Companion mode refuses admin ops by design.
+`ModeContext` (localStorage `skr-mode`) ∈ `dashboard` | `companion`; swaps the whole shell.
+`companion` is the single character-driven "drive" surface (Live2D-central `CompanionStage` +
+the tool-calling agent stream). The former standalone `agent` mode was folded in (ADR-009); a
+stored `"agent"` falls back to `dashboard`. `AgentContext` owns turn stream, serial submit queue,
+intent confirm/abort, slash commands, voice, TTS, `activeSessionId` (localStorage
+`skr-agent-session`). Companion mode refuses admin ops by design.
 
 ## Agent tool fleet (9) — `backend/lib/agent-tools.js` + `agent-tools/*`
 - server-dispatch (get a 2nd ≤120-tok closing turn): `generate_image`, `recall_favorites`,

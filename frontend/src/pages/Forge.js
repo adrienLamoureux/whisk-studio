@@ -2,13 +2,10 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import Whisk from "./Whisk";
 import WhiskVideos from "./WhiskVideos";
-import { useMode } from "../lib/mode/ModeContext";
-import AgentStage from "../components/sakura/agent/AgentStage";
 import ModeToggle from "../components/sakura/agent/ModeToggle";
 
 export default function Forge() {
   const [params, setParams] = useSearchParams();
-  const { mode } = useMode();
   const tab = params.get("tab") === "videos" ? "videos" : "images";
   const prefilledPrompt = params.get("prompt") || "";
   const prefilledStyle = params.get("style") || "";
@@ -17,20 +14,10 @@ export default function Forge() {
   const prefilledWidth = params.get("width") || "";
   const prefilledHeight = params.get("height") || "";
 
-  // ModeToggle is mounted in the same fixed top-right slot in both modes for
-  // visual consistency. Agent mode renders the manga stage; Dashboard mode
-  // renders the original form-based UI.
-  if (mode === "agent") {
-    return (
-      <div className="skr-forge-agent-shell">
-        <div className="skr-forge-mode-slot">
-          <ModeToggle />
-        </div>
-        <AgentStage />
-      </div>
-    );
-  }
-
+  // The top-right ModeToggle flips the Atelier between the form-based Dashboard
+  // and the Live2D-central Companion drive surface (CompanionStage takes over
+  // the viewport). There is no separate in-page "agent" stage anymore — see
+  // ADR-009.
   return (
     <div className="skr-forge-dashboard-shell">
       <div className="skr-forge-mode-slot">

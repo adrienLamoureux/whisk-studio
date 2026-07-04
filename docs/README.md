@@ -24,7 +24,7 @@ resolution for their audience. Start a coding agent at the AI column, a person a
 | [`../frontend/ARCHITECTURE.md`](../frontend/ARCHITECTURE.md) | frontend component tree, hook graph, contexts | human |
 | [`../frontend/THEMES.md`](../frontend/THEMES.md) | the 10-palette × dark/light theme system | human |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | code style, PR checklist, commit format | human |
-| [`adr/`](./adr/) | the 8 architecture decisions (001–008) — immutable records | both |
+| [`adr/`](./adr/) | the 9 architecture decisions (001–009) — immutable records | both |
 | [`architecture-current.mmd`](./architecture-current.mmd) · [`agent-turn-loop.mmd`](./agent-turn-loop.mmd) | diagram sources → `bash scripts/render-diagrams.sh` | both |
 | [`proposals/`](./proposals/) | historical design records (shipped) — the *why*, plus still-parked work | both |
 | [`../IDEAS.md`](../IDEAS.md) | live registry of deployed idea stacks (auto-maintained) | both |

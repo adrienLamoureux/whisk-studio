@@ -4,8 +4,10 @@ Whisk Studio is an AWS-hosted AI creation platform with image, video, story, mus
 
 ## Product Capabilities
 - Authenticated creative workspace for images, videos, stories, soundtracks, and LoRA profiles
-- Three conversational modes (one backend): **Dashboard** (forms), **Agent** (chat that calls a
-  9-tool fleet via Bedrock Converse), **Companion** (full-viewport, character-driven, refuses admin ops)
+- Two conversational modes (one backend): **Dashboard** (forms) and **Companion drive** —
+  a full-viewport, Live2D-central surface where the character-led chat calls a 9-tool agent
+  fleet via Bedrock Converse (refuses admin ops). The standalone agent panel was folded into
+  the companion drive so there is one character-driven surface, not two (ADR-009)
 - Shared image/video library with favorites and sharing flows
 - Director operations for configuration, queue visibility, session pinning, and masonry asset management
 - Story sessions with scene illustrations, animation, and per-scene music
@@ -119,7 +121,7 @@ Start at **[`docs/README.md`](docs/README.md)** — the index that organises eve
 - `CONTRIBUTING.md`: code style, quality gates, PR checklist
 - `docs/api-spec.md`: full API contract (73+ endpoints, request/response shapes)
 - `docs/testing.md`: how to run and write all test layers
-- `docs/adr/`: architecture decision records (001–008)
+- `docs/adr/`: architecture decision records (001–009)
 - `frontend/ARCHITECTURE.md`: component tree, hook graph, CSS system
 
 ## Common Configuration
