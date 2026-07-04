@@ -1,8 +1,7 @@
-/* ─── Agent mode — manga panel, composer, mode toggle, badges ─── */
+/* ─── Agent stream primitives (used by the companion drive) — manga panel, composer, mode toggle, badges ─── */
 
 /* ── Mode toggle (consistent fixed top-right slot in both modes) ── */
 .skr-forge-mode-slot { position: absolute; top: 8px; right: 8px; z-index: 10; }
-.skr-forge-agent-shell { position: relative; min-height: calc(100vh - 120px); }
 .skr-forge-dashboard-shell { position: relative; }
 
 .skr-mode-toggle {
@@ -17,17 +16,7 @@
 .skr-mode-toggle.is-agent { background: var(--skr-gradient-accent); border-color: transparent; color: #fff; box-shadow: var(--skr-shadow-md); }
 .skr-mode-toggle-icon { font-size: 14px; }
 
-/* ── Stage shell ── */
-.skr-agent-stage { position: relative; display: flex; flex-direction: column; min-height: calc(100vh - 180px); border-radius: 18px; overflow: hidden; }
-.skr-agent-stage-backdrop {
-  position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  background: var(--skr-gradient-hero); background-size: 200% 200%;
-  animation: skr-gradient-drift 22s ease-in-out infinite alternate; opacity: 0.85;
-}
-.skr-agent-stage-meta {
-  position: absolute; top: 12px; left: 16px; z-index: 3;
-  display: flex; align-items: center; gap: 8px;
-}
+/* ── Layout toggle (used by the companion drive meta strip: ↓ Export) ── */
 .skr-layout-toggle {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
@@ -84,32 +73,6 @@
 .skr-session-picker-new:hover:not(:disabled) { background: color-mix(in srgb, var(--skr-accent-secondary) 10%, transparent); }
 .skr-session-picker-new:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Bento layout: CSS columns pack tool-result panels into 2-3 tracks ── */
-.skr-agent-stage[data-layout="bento"] .skr-agent-stage-stream {
-  display: block;
-  column-count: 2;
-  column-gap: 16px;
-  max-width: 1080px;
-}
-.skr-agent-stage[data-layout="bento"] .skr-agent-stage-stream > * {
-  display: block;
-  margin: 0 0 16px;
-  break-inside: avoid;
-  width: 100%;
-}
-/* Text panels (user / agent / thinking / confirm-all) span full width in
-   bento so they read like chapter markers between visual results */
-.skr-agent-stage[data-layout="bento"] .skr-manga-panel--user,
-.skr-agent-stage[data-layout="bento"] .skr-manga-panel--agent,
-.skr-agent-stage[data-layout="bento"] .skr-manga-panel--thinking {
-  column-span: all;
-  margin-bottom: 16px;
-}
-@media (min-width: 1100px) {
-  .skr-agent-stage[data-layout="bento"] .skr-agent-stage-stream { column-count: 3; }
-}
-.skr-agent-stage-scroll { position: relative; z-index: 1; flex: 1; overflow-y: auto; padding: 56px 24px 24px; }
-.skr-agent-stage-stream { display: flex; flex-direction: column; gap: 16px; max-width: 720px; margin: 0 auto; }
 
 /* ── Manga panels ── */
 .skr-manga-panel {
@@ -174,7 +137,6 @@
 .skr-btn-reroll:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Composer ── */
-.skr-agent-stage-composer-wrap { position: relative; z-index: 2; padding: 12px 24px 20px; border-top: 1px solid color-mix(in srgb, var(--skr-accent) 18%, transparent); background: color-mix(in srgb, var(--skr-glass) 90%, black); }
 .skr-agent-composer { display: flex; flex-direction: column; gap: 4px; max-width: 720px; margin: 0 auto; }
 .skr-agent-composer-row { display: flex; gap: 10px; align-items: flex-end; }
 .skr-agent-composer-input { flex: 1; background: rgba(0,0,0,0.25); border: 1.5px solid color-mix(in srgb, var(--skr-accent) 25%, transparent); border-radius: 12px; padding: 12px 14px; color: var(--skr-text-primary); font-family: inherit; font-size: 15px; resize: vertical; min-height: 44px; max-height: 160px; }
@@ -358,26 +320,9 @@ button.skr-manga-panel { display: block; width: auto; }
  * bottom so the bottom HUD doesn't crowd it out.
  */
 @media (max-width: 640px) {
-  /* Bento collapses to single column on phones — multi-column tracks are
-     unreadable below ~720px and break-inside doesn't always behave */
-  .skr-agent-stage[data-layout="bento"] .skr-agent-stage-stream {
-    column-count: 1 !important;
-  }
-  .skr-agent-stage { min-height: calc(100vh - 140px); border-radius: 12px; }
-  .skr-agent-stage-scroll { padding: 56px 12px 16px; }
-  .skr-agent-stage-stream { gap: 12px; }
-  .skr-agent-stage-meta { top: 8px; left: 10px; }
-
   .skr-manga-panel { padding: 12px 14px; max-width: 100%; }
   .skr-manga-panel-text { font-size: 14px; }
 
-  /* Pin the composer to the viewport bottom on small screens — Safari iOS
-     keyboard handling relies on this. The bottom HUD has its own z-stack. */
-  .skr-agent-stage-composer-wrap {
-    position: sticky; bottom: 0;
-    padding: 10px 12px max(12px, env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--skr-glass) 95%, black);
-  }
   .skr-agent-composer-input { font-size: 16px; /* avoid iOS zoom-on-focus */ min-height: 40px; }
   .skr-agent-composer-send { padding: 10px 14px; font-size: 13px; }
 
@@ -396,7 +341,5 @@ button.skr-manga-panel { display: block; width: auto; }
 
 /* Even tighter padding for very small phones */
 @media (max-width: 380px) {
-  .skr-agent-stage-scroll { padding: 52px 8px 12px; }
-  .skr-agent-stage-composer-wrap { padding: 8px 8px max(10px, env(safe-area-inset-bottom)); }
   .skr-manga-panel { padding: 10px 12px; }
 }

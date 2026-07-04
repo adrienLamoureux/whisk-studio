@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Link,
@@ -132,7 +132,6 @@ function SakuraShell({ children }) {
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   const { dispatch } = useCompanion();
-  const [hudExpanded, setHudExpanded] = useState(false);
 
   const isActive = useCallback(
     (path) => {
