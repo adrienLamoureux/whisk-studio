@@ -57,17 +57,6 @@ npm --prefix cdk run idea:deploy -- --stage=dev
 
 Post-deploy validation is mandatory: `idea:deploy` runs sanity + UI smoke checks automatically.
 
-## Live Stacks
-
-| Idea ID | CloudFront | Notes |
-|---------|------------|-------|
-| `dev` | `d2l9b1xmucsb19.cloudfront.net` | Full stack — Sakura Bloom frontend (the only design) |
-
-Shared test credentials: `test@test.com` / `Test1234567@`
-
-API: `https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/`
-Cognito domain: `whiskstudio-alx-dev-761593662432.auth.us-east-1.amazoncognito.com`
-
 ## Local Development
 
 Install dependencies:
