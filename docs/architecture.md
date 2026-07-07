@@ -23,7 +23,7 @@ Agent / Companion turn loop — the Bedrock Converse tool-use sequence ([SVG](./
 
 | Layer | Primary Files | Notes |
 |-------|---------------|------|
-| Frontend | `frontend/src/` | Full Sakura Bloom React app — Live2D companion, `skr-` CSS system, 10 themes, bottom HUD |
+| Frontend | `frontend/src/` | React app with two runtime aesthetics — Obscura (default, dark painterly) + Sakura Bloom (anime, 10 palettes) — Live2D companion, `skr-` CSS system, bottom HUD |
 | Backend API | `backend/index.js`, `backend/routes/**`, `backend/lib/**` | Express app wrapped for Lambda |
 | Runtime config | `frontend/public/config.json` at deploy time, `frontend/src/services/runtime-config.js` | Drives API and Cognito wiring |
 | Infrastructure | `cdk/bin/static-web-aws-ai-stack.ts`, `cdk/lib/*.ts`, `cdk/scripts/*.js` | Single full-stack deploy |
@@ -134,14 +134,14 @@ backend/index.js
 | `agent-admin-route.js` | Sanctum admin endpoints — GET/PUT `/api/admin/agent/model`, GET `/api/admin/agent/cost` | `/` |
 | `agent-sessions-route.js` | GET/POST/PATCH/DELETE `/api/agent/sessions` — named conversation sessions (v1.7) | `/` |
 
-### 5.3 Frontend (Sakura Bloom)
-The Sakura Bloom frontend is the primary UI, living in `frontend/src/` on `main`:
+### 5.3 Frontend (Obscura + Sakura Bloom)
+The frontend lives in `frontend/src/` on `main` and ships **two runtime-switchable aesthetics** (ADR-010): **Obscura** (default — dark painterly Belle Époque: ink/gold/serifs) and **Sakura Bloom** (bright anime):
 - Live2D companion (Hiyori) rendered via `pixi-live2d-display@0.4.0` + `pixi.js@6`
 - Bottom HUD navigation (Realm / Atelier / Chronicle / Sanctum)
-- 10 themes (sakura, moonrise, bamboo, ember, void, glacier, dusk, aurora, crimson, storm) with dark/light brightness variants
+- Aesthetic axis (`data-aesthetic`, localStorage `skr-aesthetic`, default `obscura`) above the palette axis: the 10 color themes (sakura, moonrise, bamboo, ember, void, glacier, dusk, aurora, crimson, storm) apply only under Sakura; Obscura carries its own palette. Dark/light brightness works in both (ADR-010)
 - Companion memory via DynamoDB, proactive companion via AI-generated messages
-- **Modes (v0 companion + v1.7 agent)** — `ModeContext` (localStorage `skr-mode`) switches the whole shell between two surfaces: `dashboard` (form-UI) and `companion` — the single character-driven "drive" surface (full-viewport `CompanionStage`: Live2D dominant on the left, the tool-calling agent's turn stream + tool cards on the right, one composer; refuses admin operations). The former standalone `agent` mode (a Live2D-less manga stream that ran alongside the floating companion) was folded into `companion` — its meta controls were ported and `AgentStage` deleted (**ADR-009**); a stored `"agent"` falls back to `dashboard`. `AgentContext` owns the turn stream, serial submit queue, intent confirm/abort chain, slash command dispatcher, voice input, TTS, and the active session id (localStorage `skr-agent-session`). **9-tool fleet**: `generate_image`, `set_theme`, `continue_story`, `illustrate_scene`, `recall_favorites`, `generate_music`, `browse_gallery`, plus companion v0's `view_my_creations` and `what_can_you_do`. See ADR-007 + ADR-009, `docs/proposals/agent-mode-v0.md`, and `docs/proposals/companion-mode-v0.md`.
-- `skr-` CSS class prefix system with custom properties in `src/styles/tokens.css`. Agent-mode CSS lives in its own `src/styles/agent.css` module.
+- **Modes (v0 companion + v1.7 agent)** — `ModeContext` (localStorage `skr-mode`) switches the whole shell between two surfaces: `dashboard` (form-UI) and `companion` — the single character-driven "drive" surface (full-viewport `CompanionStage`: Live2D dominant on the left, the tool-calling agent's turn stream + tool cards on the right, one composer; refuses admin operations). The former standalone `agent` mode (a Live2D-less manga stream that ran alongside the floating companion) was folded into `companion` — its meta controls were ported and `AgentStage` deleted (**ADR-009**); a stored `"agent"` falls back to `dashboard`. `AgentContext` owns the turn stream, serial submit queue, intent confirm/abort chain, slash command dispatcher, voice input, TTS, and the active session id (localStorage `skr-agent-session`). **10-tool fleet**: `generate_image`, `set_theme`, `set_aesthetic`, `continue_story`, `illustrate_scene`, `recall_favorites`, `generate_music`, `browse_gallery`, plus companion v0's `view_my_creations` and `what_can_you_do`. See ADR-007 + ADR-009, `docs/proposals/agent-mode-v0.md`, and `docs/proposals/companion-mode-v0.md`.
+- `skr-` CSS class prefix system with custom properties in `src/styles/tokens.css`; the Obscura aesthetic overrides them from `src/styles/obscura/` (imported last). Agent-mode CSS lives in its own `src/styles/agent.css` module.
 
 See [`frontend/ARCHITECTURE.md`](../frontend/ARCHITECTURE.md) for component tree, hook graph, and CSS design system details.
 

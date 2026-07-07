@@ -23,7 +23,7 @@ hands-free companion mode where the character is the only navigation surface.
 **Capabilities today**
 - Text-to-image generation (4 styles, 3 aspect ratios, LoRA support) via Replicate + Bedrock + CivitAI
 - Illustrated, stateful storytelling with per-scene illustration + generated music
-- **Agent Mode (v1.7)** — Bedrock Converse tool-use loop with a 9-tool fleet, per-user memory, cross-session preferences, named sessions, voice input
+- **Agent Mode (v1.7)** — Bedrock Converse tool-use loop with a 10-tool fleet, per-user memory, cross-session preferences, named sessions, voice input
 - **Companion Mode (v0)** — full-viewport, character-driven UX that refuses admin operations by design
 - Live2D companion with proactive messaging and persistent memory
 - Admin "Sanctum" — feature flags (cohort-scoped), cost dashboard, model picker
@@ -40,7 +40,7 @@ hands-free companion mode where the character is the only navigation surface.
 | Frontend tests | **129 passing** (RTL + Jest) | `npm --prefix frontend run test:ci` |
 | File-length gate | clean — **0 files over 500 lines** | `scripts/check-file-length.sh` |
 | HTTP endpoints | 73+ across 29 route modules | `api-spec.md` |
-| Themes | 10, each with dark/light variants | `src/styles/themes/` |
+| Aesthetics | 2 runtime-switchable: Obscura (default, dark painterly) + Sakura Bloom (10 palettes × dark/light) | `src/styles/obscura/`, `src/styles/themes/` |
 | Default LLM | Claude **Haiku 4.5** (admin-overridable) | `agent-config.js` |
 | Infra | 100% serverless (no EC2/RDS/NAT/ALB) | §4 |
 | Deploy | one command, ~build+synth+sync+smoke | `cdk run idea:deploy` |
@@ -81,9 +81,10 @@ API Gateway ──► Lambda (Express via @vendia/serverless-express)
   and `error-handler.js` keep handlers thin and uniform.
 
 ### 3.4 Frontend
-React 18 SPA, "Sakura Bloom" design. No CSS framework — a hand-built `skr-` design
+React 18 SPA with two runtime aesthetics (ADR-010): "Obscura" (default — dark painterly,
+serif type, gold/ink) and "Sakura Bloom" (anime). No CSS framework — a hand-built `skr-` design
 system on CSS custom properties ([ADR-003](./adr/003-css-design-system-over-tailwind.md)),
-10 themes. The Live2D companion renders via `pixi-live2d-display` on `pixi.js@6`.
+10 Sakura palettes. The Live2D companion renders via `pixi-live2d-display` on `pixi.js@6`.
 Three top-level **modes** (`ModeContext`, persisted to `localStorage["skr-mode"]`)
 swap the entire shell: `dashboard` → `agent` → `companion`.
 
@@ -153,7 +154,7 @@ fall into three classes, which determines the control flow:
 - **intent** (`continue_story`, `illustrate_scene`, `generate_music`) — returned as a
   confirm payload; the user approves before any write hits their Chronicle.
 
-The 9-tool fleet: `generate_image`, `set_theme`, `continue_story`, `illustrate_scene`,
+The 10-tool fleet: `generate_image`, `set_theme`, `set_aesthetic`, `continue_story`, `illustrate_scene`,
 `recall_favorites`, `generate_music`, `browse_gallery`, plus companion-v0's
 `view_my_creations` and `what_can_you_do`.
 

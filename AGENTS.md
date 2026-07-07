@@ -10,7 +10,7 @@
 - Reuse existing constant/config modules before creating new literals.
 
 ## Repo Reality
-- `main` is the single source-of-truth branch for the full stack: backend, frontend (Sakura Bloom design), CDK, shared contracts, registries, and documentation.
+- `main` is the single source-of-truth branch for the full stack: backend, frontend (Obscura + Sakura Bloom aesthetics, ADR-010), CDK, shared contracts, registries, and documentation.
 - The Sakura frontend (Live2D companion, bottom HUD, 10 themes) is the primary UI — it lives in `frontend/src/` on `main`.
 - Future agents should read `docs/architecture.md` before changing contracts.
 
@@ -20,7 +20,7 @@
 - Backend routes: `backend/routes/index.js` registers 29 route modules exposing 73+ HTTP endpoints.
 - Backend domain/helpers: `backend/lib/*.js` plus `backend/lib/story-state/` and `backend/lib/agent-tools/`.
 - Backend config: `backend/config/models.js`, `backend/config/story-seed-data.js`, `backend/config/lora.js`.
-- Frontend: `frontend/src/` — full Sakura Bloom React app (Live2D companion, `skr-` CSS system, 10 themes, bottom HUD).
+- Frontend: `frontend/src/` — React app with two runtime aesthetics: Obscura (default) + Sakura Bloom (Live2D companion, `skr-` CSS system, 10 Sakura palettes, bottom HUD).
 - Two UI modes via `ModeContext` (localStorage `skr-mode`): `dashboard` | `companion`.
   `companion` is the single character-driven drive surface (Live2D-central `CompanionStage`) that
   runs the tool-calling agent = Bedrock Converse + a 9-tool fleet (`backend/lib/agent-tools.js`) and
@@ -32,7 +32,7 @@
 ## Active Branch
 
 `main` is the only active development branch. All backend, frontend, and CDK changes go here.
-There are no design variants or per-idea worktrees — Sakura Bloom is the one and only design.
+There are no design variants or per-idea worktrees — one codebase, one stack. Appearance is runtime theming: the Obscura (default) and Sakura Bloom aesthetics switch via `data-aesthetic` (ADR-010), never via branches or stacks.
 
 ## Live Idea Stacks
 

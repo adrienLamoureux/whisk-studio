@@ -467,11 +467,12 @@ Agent mode is gated by the `agentMode` feature flag (Sanctum → Feature Flags),
 404 so the frontend can fall back gracefully. The same fleet also backs **companion mode** (full-viewport,
 admin-refusing); `context.mode` (`"atelier"`/`"companion"`) tunes the system prompt.
 
-#### Tool fleet (v1.7 — 9 tools)
+#### Tool fleet (v1.7 + ADR-010 — 10 tools)
 | Tool | Type | Effect |
 |------|------|--------|
 | `generate_image` | server-dispatch | Kicks off a Replicate prediction. Synchronous fast-path when `Prefer: wait=5` returns `succeeded`. |
-| `set_theme` | client-action | AgentContext applies via ThemeContext; persisted to `agentState.theme`. |
+| `set_theme` | client-action | AgentContext applies via ThemeContext (returns the app to the Sakura aesthetic); persisted to `agentState.theme`. |
+| `set_aesthetic` | client-action | Switches Sakura Bloom ↔ Obscura (ADR-010) via ThemeContext; persisted to `agentState.aesthetic`. |
 | `continue_story` | intent (requiresConfirm) | Frontend confirms → calls existing `POST /story/sessions/:id/message`, then navigates to `/chronicle?session=…`. |
 | `illustrate_scene` | intent (requiresConfirm) | Frontend confirms → calls existing `POST /story/sessions/:id/illustrations`, then navigates to Chronicle. |
 | `recall_favorites` | server-dispatch | Reads the user's recent `IMG` items, signs top-N URLs, returns prompts + thumbnails. Agent's closing turn comments on patterns. |

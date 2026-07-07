@@ -114,7 +114,11 @@ Custom hooks live in:
 
 ### Overview
 Prefix: `skr-` — avoids collision with Tailwind utilities and other overlays.
-Inspired by VN game UIs (Genshin Impact, Fate/Grand Order).
+Two runtime aesthetics (ADR-010): **Obscura** (default — dark painterly Belle Époque) and
+**Sakura Bloom** (anime, inspired by VN game UIs: Genshin Impact, Fate/Grand Order), switched via
+`data-aesthetic` on `<html>`. Chrome colors must flow from tokens (`var(--skr-*)` /
+`color-mix(in srgb, var(--skr-accent) N%, transparent)`) — never raw rgba literals — so both
+aesthetics reskin every component. See `frontend/THEMES.md`.
 
 ### File Layout
 ```
@@ -123,6 +127,11 @@ src/styles/
   themes/
     dark-themes.css  → [data-theme="<id>"] overrides for 9 non-default dark themes
     light-themes.css → [data-brightness="light"] overrides for all 10 themes
+  obscura/
+    obscura-tokens.css     → [data-aesthetic="obscura"] token set (colors, serifs, radii, motion)
+    obscura-components.css → gilt frames, vignette+grain backdrop, serif optics, gold select arrows
+    obscura-motion.css     → obscura keyframes (vignette-breathe, brush-reveal, flicker) + reduced-motion
+    obscura-light.css      → parchment light variant + light-overrides neutralizations (imported last)
   reset.css          → minimal CSS reset
   layout.css         → page shell, topbar, bottom HUD, grid helpers
   components.css     → .skr-card, .skr-btn, .skr-input, .skr-badge, etc.

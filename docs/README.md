@@ -22,7 +22,7 @@ resolution for their audience. Start a coding agent at the AI column, a person a
 | [`testing.md`](./testing.md) | quality gates: how to run/write each test layer | both |
 | [`state-of-the-art.md`](./state-of-the-art.md) | interview deep dive: cost, security, **roadmap**, the "why" | human |
 | [`../frontend/ARCHITECTURE.md`](../frontend/ARCHITECTURE.md) | frontend component tree, hook graph, contexts | human |
-| [`../frontend/THEMES.md`](../frontend/THEMES.md) | the 10-palette × dark/light theme system | human |
+| [`../frontend/THEMES.md`](../frontend/THEMES.md) | the two-aesthetic (Obscura/Sakura) × 10-palette × dark/light theme system | human |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | code style, PR checklist, commit format | human |
 | [`adr/`](./adr/) | the 9 architecture decisions (001–009) — immutable records | both |
 | [`architecture-current.mmd`](./architecture-current.mmd) · [`agent-turn-loop.mmd`](./agent-turn-loop.mmd) | diagram sources → `bash scripts/render-diagrams.sh` | both |

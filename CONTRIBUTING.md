@@ -37,7 +37,7 @@ ESLint + Prettier are the enforced formatters. Do not submit PRs with unformatte
 
 ### Frontend style notes
 - Use the `skr-` CSS class prefix for new components
-- Add new CSS custom properties to `src/styles/tokens.css` under the `:root` block
+- Add new CSS custom properties to `src/styles/tokens.css` under the `:root` block, **and** give them an Obscura value in `src/styles/obscura/obscura-tokens.css` (both aesthetics must define every token — ADR-010)
 - Do not use inline styles for theming — use CSS custom properties only
 - Import API helpers from `src/services/apiClient.js`; do not `fetch()` directly in components
 
