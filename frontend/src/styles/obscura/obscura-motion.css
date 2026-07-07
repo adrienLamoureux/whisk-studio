@@ -1,0 +1,33 @@
+/* ─── OBSCURA motion language ───
+   Durations/easings are token overrides (obscura-tokens.css); this file adds
+   the aesthetic's own keyframes: a breathing vignette, paint-stroke page
+   reveals, and candle-flicker emblems. Reduced-motion disables all of them. */
+
+@keyframes skr-obscura-vignette-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.82; }
+}
+
+@keyframes skr-obscura-brush-reveal {
+  from { clip-path: inset(0 100% 0 0); opacity: 0.4; }
+  to { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes skr-obscura-flicker {
+  0%, 91%, 100% { opacity: 1; }
+  92% { opacity: 0.85; }
+  94% { opacity: 0.97; }
+  96% { opacity: 0.88; }
+  98% { opacity: 0.95; }
+}
+
+[data-aesthetic="obscura"] .skr-backdrop { animation: skr-obscura-vignette-breathe 12s ease-in-out infinite; }
+[data-aesthetic="obscura"] .skr-page-header { animation: skr-obscura-brush-reveal 600ms var(--skr-ease-out) both; }
+[data-aesthetic="obscura"] .skr-login-emblem, [data-aesthetic="obscura"] .skr-loading-emblem { animation: skr-obscura-flicker 4.5s linear infinite; }
+[data-aesthetic="obscura"] .skr-sidebar-brand-emblem { animation: skr-obscura-flicker 7s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-aesthetic="obscura"] .skr-backdrop { animation: none !important; }
+  [data-aesthetic="obscura"] .skr-page-header { animation: none !important; clip-path: none !important; opacity: 1 !important; }
+  [data-aesthetic="obscura"] .skr-login-emblem, [data-aesthetic="obscura"] .skr-loading-emblem, [data-aesthetic="obscura"] .skr-sidebar-brand-emblem { animation: none !important; }
+}

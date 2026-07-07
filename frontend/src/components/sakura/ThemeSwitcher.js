@@ -1,8 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 
+/**
+ * Sakura-family palette picker (the 10 color themes). Only rendered while
+ * the Sakura aesthetic is active — Obscura carries its own palette (ADR-010).
+ * Brightness lives in the Sidebar footer, not here.
+ */
 export default function ThemeSwitcher() {
-  const { theme, setTheme, themes, brightness, setBrightness } = useTheme();
+  const { theme, setTheme, themes } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -16,22 +21,10 @@ export default function ThemeSwitcher() {
   }, [open]);
 
   const active = themes.find((t) => t.id === theme) || themes[0];
-  const isLight = brightness === "light";
 
   return (
     <div className="skr-theme-controls">
-      <button
-        type="button"
-        className="skr-brightness-toggle skr-tooltip"
-        onClick={() => setBrightness(isLight ? "dark" : "light")}
-        data-tooltip={isLight ? "Switch to dark mode" : "Switch to light mode"}
-        aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
-        aria-pressed={isLight}
-      >
-        {isLight ? "☀" : "☾"}
-      </button>
-
-      <div ref={ref} style={{ position: "relative" }}>
+      <div ref={ref} style={{ position: "relative", width: "100%" }}>
         <button
           type="button"
           className="skr-theme-trigger"

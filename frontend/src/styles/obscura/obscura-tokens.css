@@ -1,0 +1,100 @@
+/* ═══════════════════════════════════════════════════════════
+   OBSCURA — dark painterly aesthetic (ADR-010)
+   Belle Époque / chiaroscuro: ink blacks, antique gold, oxblood,
+   parchment text, serif typography, slow cinematic motion.
+   Token overrides only — component restyles live in
+   obscura-components.css / obscura-motion.css / obscura-light.css.
+   Selected via [data-aesthetic="obscura"] on <html>; while active,
+   ThemeContext removes data-theme so the 10 Sakura palettes never
+   compete with this block.
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Spectral:wght@400;500;600&display=swap');
+
+/* ─── "The canvas at night" — dark (default) ─── */
+[data-aesthetic="obscura"] {
+  color-scheme: dark;
+
+  --skr-bg: #0E0C09;
+  --skr-base: #0E0C09;
+  --skr-surface: #1A1613;
+  --skr-elevated: #252019;
+  --skr-card: #1E1914;
+
+  --skr-accent: #C9A45C;            /* antique gold */
+  --skr-accent-hover: #E0BC72;      /* lit gold */
+  --skr-accent-secondary: #9E3B34;  /* oxblood / madder */
+  --skr-accent-info: #6E86A0;       /* muted steel blue */
+  --skr-accent-success: #6F8F6A;    /* verdigris */
+  --skr-accent-warning: #C9822E;    /* burnt amber */
+  --skr-accent-danger: #C25048;     /* madder red */
+
+  --skr-text: #EDE3CF;              /* parchment */
+  --skr-text-primary: #EDE3CF;
+  --skr-text-inverse: #0E0C09;
+  --skr-text-secondary: #B5A480;    /* faded sepia */
+  --skr-text-muted: #7A6C52;
+  --skr-text-tertiary: #4E4536;
+
+  --skr-border: rgba(201, 164, 92, 0.16);         /* gilt hairline */
+  --skr-border-strong: rgba(201, 164, 92, 0.34);
+  --skr-overlay: rgba(10, 8, 6, 0.88);
+  --skr-glass: rgba(26, 22, 19, 0.72);
+
+  /* Candlelight, not neon */
+  --skr-glow: 0 0 14px rgba(201, 164, 92, 0.16);
+  --skr-glow-strong: 0 0 22px rgba(201, 164, 92, 0.26), 0 0 8px rgba(158, 59, 52, 0.16);
+
+  --skr-accent-subtle: rgba(201, 164, 92, 0.1);
+  --skr-accent-muted: rgba(201, 164, 92, 0.07);
+
+  --skr-cta: var(--skr-accent);
+  --skr-cta-hover: var(--skr-accent-hover);
+
+  /* Serif voice — Cormorant Garamond for display, Spectral for body */
+  --skr-font-display: "Cormorant Garamond", Georgia, serif;
+  --skr-font-body: "Spectral", Georgia, serif;
+
+  /* Squared, framed shapes */
+  --skr-radius-sm: 4px;
+  --skr-radius-md: 6px;
+  --skr-radius-lg: 10px;
+
+  /* Slow, stately motion — long settle, no overshoot (Obscura does not bounce) */
+  --skr-ease-out: cubic-bezier(0.19, 1, 0.22, 1);
+  --skr-ease-in-out: cubic-bezier(0.6, 0, 0.3, 1);
+  --skr-ease-spring: cubic-bezier(0.22, 0.9, 0.3, 1);
+  --skr-duration-fast: 220ms;
+  --skr-duration-normal: 380ms;
+  --skr-duration-slow: 650ms;
+
+  /* Chiaroscuro depth over neon glow */
+  --skr-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --skr-shadow-md: 0 6px 22px rgba(0, 0, 0, 0.5), 0 0 10px color-mix(in srgb, var(--skr-accent) 8%, transparent);
+  --skr-shadow-lg: 0 14px 44px rgba(0, 0, 0, 0.6), 0 0 18px color-mix(in srgb, var(--skr-accent) 12%, transparent);
+
+  /* Flat oil-paint surfaces; hero = a single candlelight source */
+  --skr-gradient-surface: linear-gradient(168deg, var(--skr-card), color-mix(in srgb, var(--skr-card) 85%, black));
+  --skr-gradient-accent: linear-gradient(135deg, #E0BC72, #8F6B21);
+  --skr-gradient-hero: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--skr-accent) 9%, transparent), transparent 65%);
+  --skr-gradient-nav-active: linear-gradient(90deg, color-mix(in srgb, var(--skr-accent) 14%, transparent), color-mix(in srgb, var(--skr-accent) 3%, transparent));
+
+  /* Companion chrome on the same palette */
+  --skr-comp-bg: rgba(26, 22, 19, 0.97);
+  --skr-comp-bg-panel: rgba(21, 18, 15, 0.97);
+  --skr-comp-border: rgba(201, 164, 92, 0.28);
+  --skr-comp-border-faint: rgba(201, 164, 92, 0.12);
+  --skr-comp-bubble-ai-bg: rgba(30, 25, 18, 0.85);
+  --skr-comp-bubble-ai-border: rgba(201, 164, 92, 0.18);
+  --skr-comp-bubble-user-bg: rgba(201, 164, 92, 0.13);
+  --skr-comp-bubble-user-border: rgba(201, 164, 92, 0.22);
+  --skr-comp-fab-bg: rgba(26, 22, 19, 0.92);
+  --skr-comp-fab-border: rgba(201, 164, 92, 0.32);
+  --skr-comp-input-bg: rgba(14, 12, 9, 0.6);
+  --skr-comp-input-border: rgba(201, 164, 92, 0.22);
+  --skr-comp-send-bg: rgba(201, 164, 92, 0.18);
+  --skr-comp-send-border: rgba(201, 164, 92, 0.32);
+  --skr-comp-shadow: 0 6px 30px rgba(0, 0, 0, 0.7);
+  --skr-comp-shadow-up: 0 -4px 24px rgba(0, 0, 0, 0.6);
+  --skr-comp-scrollbar: rgba(201, 164, 92, 0.22);
+}

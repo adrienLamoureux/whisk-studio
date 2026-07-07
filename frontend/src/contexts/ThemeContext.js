@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 export const THEMES = [
   { id: "sakura", label: "Sakura", swatch: "#FF6B9D", swatchSecondary: "#C084FC" },
@@ -13,9 +13,22 @@ export const THEMES = [
   { id: "storm", label: "Storm", swatch: "#FDE047", swatchSecondary: "#94A3B8" },
 ];
 
+// The aesthetic axis sits above the color themes: the 10 THEMES palettes only
+// apply under "sakura"; "obscura" (dark painterly, ADR-010) carries its own
+// palette and suppresses data-theme entirely while active.
+export const AESTHETICS = [
+  { id: "sakura", label: "Sakura Bloom" },
+  { id: "obscura", label: "Obscura" },
+];
+const AESTHETIC_IDS = AESTHETICS.map((a) => a.id);
+
 const STORAGE_KEY = "skr-theme";
 const BRIGHTNESS_KEY = "skr-brightness";
+const AESTHETIC_KEY = "skr-aesthetic";
 const DEFAULT_THEME = "sakura";
+const DEFAULT_AESTHETIC = "sakura";
+// Must match the pre-paint fallback in public/index.html.
+const AESTHETIC_TRANSITION_MS = 900;
 
 const ThemeContext = createContext(null);
 
@@ -28,14 +41,22 @@ export function ThemeProvider({ children }) {
     return localStorage.getItem(BRIGHTNESS_KEY) || "light";
   });
 
+  const [aesthetic, setAestheticState] = useState(() => {
+    const stored = localStorage.getItem(AESTHETIC_KEY);
+    return AESTHETIC_IDS.includes(stored) ? stored : DEFAULT_AESTHETIC;
+  });
+
+  // While obscura is active data-theme is removed so no [data-theme=X] block
+  // can fight the obscura token set; the stored skr-theme survives for
+  // switch-back.
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === DEFAULT_THEME) {
+    if (aesthetic === "obscura" || theme === DEFAULT_THEME) {
       root.removeAttribute("data-theme");
     } else {
       root.setAttribute("data-theme", theme);
     }
-  }, [theme]);
+  }, [theme, aesthetic]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -48,6 +69,27 @@ export function ThemeProvider({ children }) {
     }
   }, [brightness]);
 
+  // data-aesthetic is always set explicitly (unlike data-theme) so CSS stays
+  // debuggable. Aesthetic changes after mount trigger the transient
+  // chiaroscuro-sweep transition class (same pattern as ModeContext).
+  const aestheticMounted = useRef(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-aesthetic", aesthetic);
+    if (!aestheticMounted.current) {
+      aestheticMounted.current = true;
+      return undefined;
+    }
+    root.classList.add("skr-aesthetic-transition");
+    const timer = window.setTimeout(() => {
+      root.classList.remove("skr-aesthetic-transition");
+    }, AESTHETIC_TRANSITION_MS);
+    return () => {
+      window.clearTimeout(timer);
+      root.classList.remove("skr-aesthetic-transition");
+    };
+  }, [aesthetic]);
+
   const setTheme = useCallback((id) => {
     localStorage.setItem(STORAGE_KEY, id);
     setThemeState(id);
@@ -58,8 +100,32 @@ export function ThemeProvider({ children }) {
     setBrightnessState(mode);
   }, []);
 
+  // Enum-validated write: invalid ids are ignored (this is also the write
+  // path for agent-driven set_aesthetic client actions).
+  const setAesthetic = useCallback((id) => {
+    if (!AESTHETIC_IDS.includes(id)) return;
+    localStorage.setItem(AESTHETIC_KEY, id);
+    setAestheticState(id);
+  }, []);
+
+  const toggleAesthetic = useCallback(() => {
+    setAesthetic(aesthetic === "obscura" ? "sakura" : "obscura");
+  }, [aesthetic, setAesthetic]);
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, themes: THEMES, brightness, setBrightness }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        setTheme,
+        themes: THEMES,
+        brightness,
+        setBrightness,
+        aesthetic,
+        setAesthetic,
+        toggleAesthetic,
+        aesthetics: AESTHETICS,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

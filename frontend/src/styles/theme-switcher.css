@@ -101,6 +101,12 @@
 .skr-theme-trigger-label { font-weight: 600; }
 .skr-theme-caret { font-size: 10px; opacity: 0.6; }
 
+/* Docked in the sidebar the menu opens upward and spans the rail width
+   (the sidebar has overflow:hidden, so a downward menu would be clipped). */
+.skr-sidebar .skr-theme-menu { top: auto; bottom: calc(100% + 6px); left: 0; right: 0; min-width: 0; transform-origin: bottom left; }
+.skr-sidebar .skr-theme-trigger { width: 100%; justify-content: flex-start; }
+.skr-sidebar .skr-theme-controls { display: flex; }
+
 .skr-theme-menu {
   position: absolute;
   top: calc(100% + 8px);

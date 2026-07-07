@@ -1,0 +1,90 @@
+/* ─── OBSCURA light — "the atelier at dawn" ───
+   Parchment daylight studio: warm paper surfaces, sepia ink text, goldenrod
+   ink accents. Loaded last so [data-aesthetic="obscura"][data-brightness="light"]
+   (0,2,0) beats both the obscura dark block and the shared sakura light block
+   in light-themes.css. Also neutralizes the hardwired whites/violets that
+   light-overrides.css applies under [data-brightness="light"]. */
+
+[data-aesthetic="obscura"][data-brightness="light"] {
+  color-scheme: light;
+
+  --skr-bg: #F0E7D8;
+  --skr-base: #F0E7D8;
+  --skr-surface: #FAF4E8;
+  --skr-elevated: #E7DCC6;
+  --skr-card: #FAF4E8;
+
+  --skr-accent: #8F6B21;            /* goldenrod ink */
+  --skr-accent-hover: #A8823A;
+  --skr-accent-secondary: #8A3630;  /* oxblood, deepened for paper */
+  --skr-accent-info: #4E6B85;
+  --skr-accent-success: #58754F;
+  --skr-accent-warning: #9C6A1F;
+  --skr-accent-danger: #A03A33;
+
+  --skr-text: #241D12;              /* sepia ink */
+  --skr-text-primary: #241D12;
+  --skr-text-inverse: #FAF4E8;
+  --skr-text-secondary: #6B5A3E;
+  --skr-text-muted: #97865F;
+  --skr-text-tertiary: #BCAE8C;
+
+  --skr-border: rgba(143, 107, 33, 0.25);
+  --skr-border-strong: rgba(143, 107, 33, 0.45);
+  --skr-overlay: rgba(240, 231, 216, 0.92);
+  --skr-glass: rgba(250, 244, 232, 0.85);
+
+  --skr-glow: 0 0 10px rgba(143, 107, 33, 0.1);
+  --skr-glow-strong: 0 0 16px rgba(143, 107, 33, 0.18), 0 0 6px rgba(138, 54, 48, 0.1);
+
+  --skr-accent-subtle: rgba(143, 107, 33, 0.1);
+  --skr-accent-muted: rgba(143, 107, 33, 0.07);
+
+  --skr-cta: #8F6B21;
+  --skr-cta-hover: #A8823A;
+
+  --skr-shadow-sm: 0 1px 4px rgba(84, 66, 34, 0.14);
+  --skr-shadow-md: 0 4px 14px rgba(84, 66, 34, 0.16);
+  --skr-shadow-lg: 0 10px 32px rgba(84, 66, 34, 0.22);
+
+  --skr-gradient-surface: linear-gradient(168deg, var(--skr-card), color-mix(in srgb, var(--skr-card) 93%, #8F6B21));
+
+  --skr-comp-bg: rgba(250, 244, 232, 0.97);
+  --skr-comp-bg-panel: rgba(247, 240, 224, 0.97);
+  --skr-comp-border: rgba(143, 107, 33, 0.3);
+  --skr-comp-border-faint: rgba(143, 107, 33, 0.14);
+  --skr-comp-bubble-ai-bg: rgba(143, 107, 33, 0.07);
+  --skr-comp-bubble-ai-border: rgba(143, 107, 33, 0.16);
+  --skr-comp-bubble-user-bg: rgba(138, 54, 48, 0.08);
+  --skr-comp-bubble-user-border: rgba(138, 54, 48, 0.2);
+  --skr-comp-fab-bg: rgba(250, 244, 232, 0.95);
+  --skr-comp-fab-border: rgba(143, 107, 33, 0.3);
+  --skr-comp-input-bg: #FFFDF7;
+  --skr-comp-input-border: rgba(143, 107, 33, 0.25);
+  --skr-comp-send-bg: rgba(143, 107, 33, 0.12);
+  --skr-comp-send-border: rgba(143, 107, 33, 0.3);
+  --skr-comp-shadow: 0 4px 16px rgba(84, 66, 34, 0.14);
+  --skr-comp-shadow-up: 0 -4px 20px rgba(84, 66, 34, 0.14);
+  --skr-comp-scrollbar: rgba(143, 107, 33, 0.25);
+}
+
+/* ─── Neutralize light-overrides.css hardwired whites → warm paper ─── */
+[data-aesthetic="obscura"][data-brightness="light"] .skr-sidebar { background: var(--skr-surface); border-right-color: var(--skr-border); box-shadow: none; }
+[data-aesthetic="obscura"][data-brightness="light"] .skr-input { background: var(--skr-comp-input-bg); }
+[data-aesthetic="obscura"][data-brightness="light"] .skr-hud-pill, [data-aesthetic="obscura"][data-brightness="light"] .skr-topbar { background: var(--skr-glass); }
+[data-aesthetic="obscura"][data-brightness="light"] .skr-music-pill, [data-aesthetic="obscura"][data-brightness="light"] .skr-music-lib { background: var(--skr-glass); }
+[data-aesthetic="obscura"][data-brightness="light"] .skr-music-panel { background: var(--skr-surface); }
+[data-aesthetic="obscura"][data-brightness="light"] .skr-tool-card { background: var(--skr-card); }
+[data-aesthetic="obscura"][data-brightness="light"] .skr-gen-sidebar { background: var(--skr-surface); }
+[data-aesthetic="obscura"][data-brightness="light"] .skr-prompt-bar-input { background: var(--skr-comp-input-bg); }
+/* Kill the last violet literal (hover gradient end) with the oxblood mate */
+[data-aesthetic="obscura"][data-brightness="light"] .skr-btn-primary:hover { background: linear-gradient(135deg, var(--skr-cta-hover), var(--skr-accent-secondary)); }
+
+/* Daylight canvas: lighter vignette, same grain */
+[data-aesthetic="obscura"][data-brightness="light"] .skr-backdrop,
+[data-aesthetic="obscura"][data-brightness="light"] .skr-login-petals {
+  background:
+    radial-gradient(ellipse at 30% 18%, color-mix(in srgb, var(--skr-accent) 6%, transparent), transparent 55%),
+    radial-gradient(ellipse at 50% 35%, transparent 40%, rgba(84, 66, 34, 0.18) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}

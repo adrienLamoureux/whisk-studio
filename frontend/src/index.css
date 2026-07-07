@@ -18,3 +18,9 @@
 @import "./styles/sanctum.css";
 @import "./styles/agent.css";
 @import "./styles/companion-mode.css";
+/* Obscura aesthetic (ADR-010) — must stay last so [data-aesthetic="obscura"]
+   blocks win the cascade; obscura-light.css last of all. */
+@import "./styles/obscura/obscura-tokens.css";
+@import "./styles/obscura/obscura-components.css";
+@import "./styles/obscura/obscura-motion.css";
+@import "./styles/obscura/obscura-light.css";

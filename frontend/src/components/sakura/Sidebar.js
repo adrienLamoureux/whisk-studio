@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import AestheticToggle from "./AestheticToggle";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 const STORAGE_KEY = "skr-sidebar-collapsed";
 
@@ -15,7 +17,7 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const location = useLocation();
   const { isAuthenticated, user, logout, startLogin } = useAuth();
-  const { brightness, setBrightness } = useTheme();
+  const { brightness, setBrightness, aesthetic } = useTheme();
 
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -67,8 +69,16 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer — single row: brightness | auth (middle) | collapse */}
+      {/* Sakura palette picker — Obscura carries its own palette (ADR-010) */}
+      {aesthetic === "sakura" && !collapsed && (
+        <div className="skr-sidebar-theme">
+          <ThemeSwitcher />
+        </div>
+      )}
+
+      {/* Footer — single row: aesthetic | brightness | auth (middle) | collapse */}
       <div className="skr-sidebar-footer">
+        <AestheticToggle />
         <button
           type="button"
           className="skr-sidebar-brightness"

@@ -1,0 +1,79 @@
+/* ─── OBSCURA component restyles — shape, frames, atmosphere, typography ───
+   Everything token-expressible lives in obscura-tokens.css; these rules cover
+   what variables can't say: squared gilt-framed surfaces, the vignette/grain
+   backdrop, serif optical corrections, and painterly treatments of the
+   playful Sakura flourishes. All selectors scoped to [data-aesthetic="obscura"]. */
+
+/* ─── Atmosphere: chiaroscuro vignette + candlelight + canvas grain ─── */
+[data-aesthetic="obscura"] .skr-backdrop,
+[data-aesthetic="obscura"] .skr-login-petals {
+  background:
+    radial-gradient(ellipse at 30% 18%, color-mix(in srgb, var(--skr-accent) 5%, transparent), transparent 55%),
+    radial-gradient(ellipse at 50% 35%, transparent 30%, rgba(0, 0, 0, 0.5) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+[data-aesthetic="obscura"] .skr-companion-stage-backdrop {
+  background:
+    radial-gradient(ellipse at 40% 25%, color-mix(in srgb, var(--skr-accent) 7%, transparent), transparent 60%),
+    radial-gradient(ellipse at 50% 40%, transparent 35%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+/* ─── Shape language: squared radii + gilt hairline frames ─── */
+[data-aesthetic="obscura"] .skr-card, [data-aesthetic="obscura"] .skr-glass-card, [data-aesthetic="obscura"] .skr-stat-card { border-radius: var(--skr-radius-md); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--skr-accent) 9%, transparent); }
+[data-aesthetic="obscura"] .skr-card:hover { transform: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--skr-accent) 22%, transparent), var(--skr-shadow-md); }
+[data-aesthetic="obscura"] .skr-btn-primary, [data-aesthetic="obscura"] .skr-btn-secondary { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-btn-primary { color: var(--skr-text-inverse); font-weight: 600; letter-spacing: 0.03em; }
+[data-aesthetic="obscura"] .skr-btn-primary:hover { transform: none; }
+[data-aesthetic="obscura"] .skr-btn-ghost, [data-aesthetic="obscura"] .skr-icon-btn { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-input, [data-aesthetic="obscura"] .skr-field-select, [data-aesthetic="obscura"] .skr-field-textarea { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-tab-bar { border-radius: var(--skr-radius-md); }
+[data-aesthetic="obscura"] .skr-tab { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-tab.is-active { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--skr-accent) 25%, transparent); }
+[data-aesthetic="obscura"] .skr-chip, [data-aesthetic="obscura"] .skr-lora-chip, [data-aesthetic="obscura"] .skr-track-pill, [data-aesthetic="obscura"] .skr-track-tag { border-radius: 3px; }
+[data-aesthetic="obscura"] .skr-chip:hover { transform: none; }
+[data-aesthetic="obscura"] .skr-modal-card { border-radius: var(--skr-radius-md); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--skr-accent) 12%, transparent), var(--skr-shadow-lg); }
+[data-aesthetic="obscura"] .skr-login-card, [data-aesthetic="obscura"] .skr-auth-card { border-radius: var(--skr-radius-lg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--skr-accent) 10%, transparent), var(--skr-shadow-lg); }
+[data-aesthetic="obscura"] .skr-masonry-card, [data-aesthetic="obscura"] .skr-masonry-mgmt-card, [data-aesthetic="obscura"] .skr-masonry-overlay { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-image-tile, [data-aesthetic="obscura"] .skr-image-tile-backdrop, [data-aesthetic="obscura"] .skr-image-tile-plus, [data-aesthetic="obscura"] .skr-gallery-card { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-image-wall img, [data-aesthetic="obscura"] .skr-image-wall-item { border-radius: 3px; }
+[data-aesthetic="obscura"] .skr-lora-catalog-item, [data-aesthetic="obscura"] .skr-track-card, [data-aesthetic="obscura"] .skr-track-item { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-sidebar-item { border-radius: var(--skr-radius-sm); border-left-width: 2px; }
+[data-aesthetic="obscura"] .skr-lightbox img { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-lightbox-close { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-chat-bubble { border-radius: var(--skr-radius-md); }
+[data-aesthetic="obscura"] .skr-music-panel { border-radius: var(--skr-radius-md); }
+[data-aesthetic="obscura"] .skr-theme-menu { border-radius: var(--skr-radius-md); }
+[data-aesthetic="obscura"] .skr-gen-generate-btn, [data-aesthetic="obscura"] .skr-prompt-bar-input, [data-aesthetic="obscura"] .skr-prompt-bar-btn { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-gen-generate-btn { color: var(--skr-text-inverse); }
+
+/* HUD: nav pill becomes a framed plaque */
+[data-aesthetic="obscura"] .skr-hud-pill { border-radius: var(--skr-radius-md); border-color: var(--skr-border-strong); box-shadow: var(--skr-shadow-lg); }
+[data-aesthetic="obscura"] .skr-hud-item { border-radius: var(--skr-radius-sm); }
+[data-aesthetic="obscura"] .skr-hud-item.is-active { transform: none; }
+[data-aesthetic="obscura"] .skr-hud-label { letter-spacing: 0.12em; font-weight: 500; text-transform: uppercase; font-size: 9px; }
+
+/* Sidebar: ink panel with a gilt edge */
+[data-aesthetic="obscura"] .skr-sidebar { background: linear-gradient(180deg, var(--skr-surface), var(--skr-bg)); border-right-color: var(--skr-border-strong); }
+
+/* ─── Typography: serif optical corrections ─── */
+[data-aesthetic="obscura"] .skr-page-title { font-weight: 600; letter-spacing: 0.015em; font-size: 30px; }
+[data-aesthetic="obscura"] .skr-login-title { font-weight: 600; letter-spacing: 0.015em; }
+[data-aesthetic="obscura"] .skr-masonry-title { font-weight: 600; letter-spacing: 0.01em; font-size: 38px; }
+[data-aesthetic="obscura"] .skr-section-title, [data-aesthetic="obscura"] .skr-lora-section-title, [data-aesthetic="obscura"] .skr-lora-item-name { font-weight: 600; font-size: 17px; }
+[data-aesthetic="obscura"] .skr-brand-name, [data-aesthetic="obscura"] .skr-sidebar-brand-name { font-weight: 600; letter-spacing: 0.05em; font-size: 16px; }
+[data-aesthetic="obscura"] .skr-stat-value { font-weight: 700; }
+[data-aesthetic="obscura"] .skr-field-label { text-transform: uppercase; letter-spacing: 0.09em; font-size: 11px; font-weight: 500; }
+[data-aesthetic="obscura"] .skr-modal-title { font-weight: 600; }
+[data-aesthetic="obscura"] .skr-btn-primary, [data-aesthetic="obscura"] .skr-modal-card--panel .skr-modal-title { font-weight: 600; }
+
+/* ─── Selects: gold chevron (data-URIs can't read var(); see THEMES.md) ─── */
+[data-aesthetic="obscura"] .skr-field-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23C9A45C'%3E%3Cpath d='M7 9L2 4h10z'/%3E%3C/svg%3E"); }
+[data-aesthetic="obscura"] select.skr-flag-cohort { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23C9A45C'%3E%3Cpath d='M7 9L2 4h10z'/%3E%3C/svg%3E"); }
+
+/* ─── Painterly treatment of Sakura flourishes ─── */
+/* Masonry hero: half-speed scroll, sepia-muted imagery, ink overlay */
+[data-aesthetic="obscura"] .skr-masonry-column { --skr-masonry-duration: 180s; }
+[data-aesthetic="obscura"] .skr-masonry-hero img { filter: saturate(0.55) sepia(0.22) contrast(1.05); }
+[data-aesthetic="obscura"] .skr-masonry-overlay { background: linear-gradient(rgba(10, 8, 6, 0.35), rgba(10, 8, 6, 0.6)); }
+/* Speed lines read as etching strokes, barely-there */
+[data-aesthetic="obscura"] .skr-speed-lines { opacity: 0.35; }
