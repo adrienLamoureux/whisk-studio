@@ -91,7 +91,7 @@ export function AgentProvider({ children }) {
   const { apiBaseUrl } = useConfig();
   const { dispatch } = useCompanion();
   const { mode, setMode } = useMode();
-  const { setTheme, setBrightness } = useTheme();
+  const { setTheme, setBrightness, setAesthetic } = useTheme();
   const [turns, setTurns] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [queue, setQueue] = useState([]);
@@ -147,13 +147,20 @@ export function AgentProvider({ children }) {
     (action) => {
       if (!action || !action.clientAction) return;
       if (action.clientAction === "set_theme") {
+        // Palettes are the Sakura axis — honouring a theme request implies
+        // returning to the Sakura aesthetic (ADR-010).
+        setAesthetic("sakura");
         if (action.theme) setTheme(action.theme);
         if (action.brightness) setBrightness(action.brightness);
+      }
+      if (action.clientAction === "set_aesthetic") {
+        // setAesthetic enum-validates; invalid ids are ignored.
+        if (action.aesthetic) setAesthetic(action.aesthetic);
       }
       // continue_story / illustrate_scene: handled by the user clicking the
       // confirm button on the rendered intent panel — no auto-action here.
     },
-    [setTheme, setBrightness]
+    [setTheme, setBrightness, setAesthetic]
   );
 
   const append = useCallback((turn) => {

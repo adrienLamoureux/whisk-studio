@@ -6,7 +6,7 @@
  * Persistence:
  *   pk = USER#{userId}
  *   sk = AGENT#STATE
- *   { lastStyle, lastAspect, lastLora, theme, updatedAt }
+ *   { lastStyle, lastAspect, lastLora, theme, aesthetic, updatedAt }
  *
  * The agent reads this on every turn to bias its tool-arg defaults toward
  * what the user has actually chosen in the past — implicit "remember I
@@ -16,7 +16,7 @@
 
 const { buildMediaPk, buildAgentPrefsSk } = require("./keys");
 
-const ALLOWED_KEYS = ["lastStyle", "lastAspect", "lastLora", "theme"];
+const ALLOWED_KEYS = ["lastStyle", "lastAspect", "lastLora", "theme", "aesthetic"];
 
 // Enum guards for prefs values. These MUST match the tool input schemas in
 // agent-tools.js — a value that arrives from a tool-arg (or worse, a
@@ -40,6 +40,7 @@ const VALID_THEMES = new Set([
   "crimson",
   "storm",
 ]);
+const VALID_AESTHETICS = new Set(["sakura", "obscura"]);
 
 const isLoraIdShape = (v) => typeof v === "string" && /^[a-zA-Z0-9_\-:./]{1,120}$/.test(v.trim());
 
@@ -54,6 +55,7 @@ const validatePrefValue = (key, value) => {
   if (key === "lastStyle") return VALID_STYLES.has(v) ? v : null;
   if (key === "lastAspect") return VALID_ASPECTS.has(v) ? v : null;
   if (key === "theme") return VALID_THEMES.has(v) ? v : null;
+  if (key === "aesthetic") return VALID_AESTHETICS.has(v) ? v : null;
   if (key === "lastLora") return isLoraIdShape(v) ? v : null;
   return null;
 };
@@ -161,4 +163,5 @@ module.exports = {
   VALID_STYLES,
   VALID_ASPECTS,
   VALID_THEMES,
+  VALID_AESTHETICS,
 };

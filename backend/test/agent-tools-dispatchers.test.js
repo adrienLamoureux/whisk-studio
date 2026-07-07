@@ -56,6 +56,46 @@ test("set_theme returns clientAction result and patches agentState", async () =>
   assert.equal(patches[0].p.theme, "moonrise");
 });
 
+// ── ADR-010: set_aesthetic ─────────────────────────────────────────────────
+
+test("set_aesthetic rejects unknown aesthetic ids", async () => {
+  const deps = createMockDeps();
+  const r = await dispatchTool({
+    name: "set_aesthetic",
+    args: { aesthetic: "vaporwave" },
+    deps,
+    userId: "u1",
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.error, /^unsupported_aesthetic/);
+});
+
+test("set_aesthetic returns clientAction result and patches agentState", async () => {
+  const patches = [];
+  const deps = createMockDeps({
+    agentState: {
+      load: async () => null,
+      patch: async (userId, p) => {
+        patches.push({ userId, p });
+      },
+      clear: async () => {},
+    },
+  });
+  const r = await dispatchTool({
+    name: "set_aesthetic",
+    args: { aesthetic: "obscura" },
+    deps,
+    userId: "u1",
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.result.clientAction, "set_aesthetic");
+  assert.equal(r.result.aesthetic, "obscura");
+  // Allow the fire-and-forget patch to settle
+  await new Promise((r2) => setTimeout(r2, 5));
+  assert.equal(patches.length, 1);
+  assert.equal(patches[0].p.aesthetic, "obscura");
+});
+
 // ── v1 tools: continue_story ───────────────────────────────────────────────
 
 test("continue_story requires non-empty content", async () => {

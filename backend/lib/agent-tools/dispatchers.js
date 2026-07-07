@@ -6,6 +6,7 @@
  * The heavy `generate_image` dispatcher lives in `./generate-image.js`.
  * This file holds the smaller ones grouped by surface area:
  *   - set_theme            (client-action)
+ *   - set_aesthetic        (client-action)
  *   - continue_story       (intent)
  *   - illustrate_scene     (intent)
  *   - recall_favorites     (server-dispatch — user's IMG history)
@@ -29,6 +30,8 @@ const SUPPORTED_THEMES = [
   "storm",
 ];
 
+const SUPPORTED_AESTHETICS = ["sakura", "obscura"];
+
 // ─── set_theme ─────────────────────────────────────────────────────────────
 const dispatchSetTheme = async ({ args, deps, userId }) => {
   const theme = String(args.theme || "").trim();
@@ -48,6 +51,26 @@ const dispatchSetTheme = async ({ args, deps, userId }) => {
       clientAction: "set_theme",
       theme,
       ...(brightness ? { brightness } : {}),
+    },
+  };
+};
+
+// ─── set_aesthetic ─────────────────────────────────────────────────────────
+const dispatchSetAesthetic = async ({ args, deps, userId }) => {
+  const aesthetic = String(args.aesthetic || "").trim();
+  if (!SUPPORTED_AESTHETICS.includes(aesthetic)) {
+    return { ok: false, error: `unsupported_aesthetic:${aesthetic}` };
+  }
+
+  if (deps.agentState && userId) {
+    deps.agentState.patch(userId, { aesthetic }).catch(() => {});
+  }
+
+  return {
+    ok: true,
+    result: {
+      clientAction: "set_aesthetic",
+      aesthetic,
     },
   };
 };
@@ -295,6 +318,8 @@ const dispatchBrowseGallery = async ({ args, deps }) => {
 
 module.exports = {
   SUPPORTED_THEMES,
+  SUPPORTED_AESTHETICS,
+  dispatchSetAesthetic,
   dispatchSetTheme,
   dispatchContinueStory,
   dispatchIllustrateScene,

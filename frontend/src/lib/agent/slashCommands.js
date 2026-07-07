@@ -10,11 +10,12 @@
  * Recognised commands:
  *   /help           — show the command list inline (agent panel, no LLM call)
  *   /clear, /reset  — wipe the local turn stream
- *   /theme <name>   — switch theme directly (no LLM call)
+ *   /theme <name>   — switch Sakura palette directly (no LLM call; returns to Sakura)
+ *   /aesthetic <id> — switch aesthetic (sakura | obscura) directly (no LLM call)
  *   /recall [n]     — submit a normal turn that triggers recall_favorites
  *   /reroll         — re-submit the last user prompt
  *
- * Themes match the SUPPORTED_THEMES enum on the backend agent-tools.js.
+ * Themes/aesthetics match the SUPPORTED_* enums on the backend agent-tools.js.
  */
 
 const SUPPORTED_THEMES = [
@@ -30,10 +31,15 @@ const SUPPORTED_THEMES = [
   "storm",
 ];
 
+const SUPPORTED_AESTHETICS = ["sakura", "obscura"];
+
 export const SLASH_HELP_TEXT = [
   "**/help** — show this list",
   "**/clear** or **/reset** — wipe the panel stream",
-  "**/theme <name>** — switch theme (" + SUPPORTED_THEMES.join(", ") + ")",
+  "**/theme <name>** — switch Sakura palette (" +
+    SUPPORTED_THEMES.join(", ") +
+    "); returns to the Sakura aesthetic",
+  "**/aesthetic <id>** — switch aesthetic (" + SUPPORTED_AESTHETICS.join(", ") + ")",
   "**/recall [n]** — pull your recent generations (1–12)",
   "**/reroll** — re-submit your last prompt",
 ].join("\n");
@@ -43,6 +49,7 @@ export const SLASH_COMMANDS = {
   clear: { args: 0 },
   reset: { args: 0 },
   theme: { args: 1, completions: SUPPORTED_THEMES },
+  aesthetic: { args: 1, completions: SUPPORTED_AESTHETICS },
   recall: { args: 0, optionalArgs: 1 },
   reroll: { args: 0 },
 };
@@ -99,6 +106,32 @@ export function dispatchSlashCommand(parsed, ctx) {
     append({
       kind: "tool-result",
       payload: { name: "set_theme", clientAction: "set_theme", theme, status: "succeeded" },
+    });
+    return { handled: true };
+  }
+
+  if (name === "aesthetic") {
+    const aesthetic = String(args[0] || "").toLowerCase();
+    if (!SUPPORTED_AESTHETICS.includes(aesthetic)) {
+      append({
+        kind: "agent",
+        payload: {
+          text: `Unknown aesthetic "${aesthetic}". Try: ${SUPPORTED_AESTHETICS.join(", ")}`,
+          emotion: "thinking",
+          error: true,
+        },
+      });
+      return { handled: true };
+    }
+    applyClientAction({ clientAction: "set_aesthetic", aesthetic });
+    append({
+      kind: "tool-result",
+      payload: {
+        name: "set_aesthetic",
+        clientAction: "set_aesthetic",
+        aesthetic,
+        status: "succeeded",
+      },
     });
     return { handled: true };
   }

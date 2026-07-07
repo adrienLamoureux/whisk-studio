@@ -6,6 +6,7 @@
  * v1.2 ships seven tools:
  *   - generate_image       (Replicate, server-dispatch)
  *   - set_theme            (client-action — applied via ThemeContext)
+ *   - set_aesthetic        (client-action — Sakura Bloom vs Obscura, ADR-010)
  *   - continue_story       (intent — user confirms)
  *   - illustrate_scene     (intent — user confirms)
  *   - recall_favorites     (server-dispatch — user's IMG history)
@@ -24,7 +25,9 @@ const {
 } = require("./agent-tools/generate-image");
 const {
   SUPPORTED_THEMES,
+  SUPPORTED_AESTHETICS,
   dispatchSetTheme,
+  dispatchSetAesthetic,
   dispatchContinueStory,
   dispatchIllustrateScene,
   dispatchRecallFavorites,
@@ -72,7 +75,9 @@ const setThemeToolSpec = {
   toolSpec: {
     name: "set_theme",
     description:
-      "Switch the app's visual theme. Use when the user asks for a different mood/vibe " +
+      "Switch the app's color palette within the Sakura Bloom aesthetic (applying one returns " +
+      "the app to Sakura if Obscura is active — prefer set_aesthetic for 'dark painterly' asks). " +
+      "Use when the user asks for a different mood/vibe " +
       "('something darker', 'more romantic', 'spookier'). Map their request to the closest theme. " +
       "Themes: sakura (pink/warm), moonrise (cool blue), bamboo (green), ember (orange/warm), " +
       "void (black/purple), glacier (icy blue), dusk (twilight), aurora (multicolor), " +
@@ -89,6 +94,31 @@ const setThemeToolSpec = {
           },
         },
         required: ["theme"],
+      },
+    },
+  },
+};
+
+// ─── set_aesthetic tool spec (client-action) ───────────────────────────────
+const setAestheticToolSpec = {
+  toolSpec: {
+    name: "set_aesthetic",
+    description:
+      "Switch between the app's two visual aesthetics: 'sakura' (bright anime, pink neon, " +
+      "rounded/playful) and 'obscura' (dark painterly Belle Époque — ink blacks, antique gold, " +
+      "serif typography). Use when the user asks for the dark/painterly/elegant look or wants " +
+      "the anime look back. For color-only changes within Sakura, use set_theme instead.",
+    inputSchema: {
+      json: {
+        type: "object",
+        properties: {
+          aesthetic: {
+            type: "string",
+            enum: SUPPORTED_AESTHETICS,
+            description: "Aesthetic id.",
+          },
+        },
+        required: ["aesthetic"],
       },
     },
   },
@@ -260,6 +290,7 @@ const browseGalleryToolSpec = {
 const ALL_TOOL_SPECS = [
   generateImageToolSpec,
   setThemeToolSpec,
+  setAestheticToolSpec,
   continueStoryToolSpec,
   illustrateSceneToolSpec,
   recallFavoritesToolSpec,
@@ -273,6 +304,7 @@ const ALL_TOOL_SPECS = [
 const dispatchTool = async ({ name, args = {}, deps, userId }) => {
   if (name === "generate_image") return dispatchGenerateImage({ args, deps, userId });
   if (name === "set_theme") return dispatchSetTheme({ args, deps, userId });
+  if (name === "set_aesthetic") return dispatchSetAesthetic({ args, deps, userId });
   if (name === "continue_story") return dispatchContinueStory({ args, deps, userId });
   if (name === "illustrate_scene") return dispatchIllustrateScene({ args, deps, userId });
   if (name === "recall_favorites") return dispatchRecallFavorites({ args, deps, userId });
@@ -287,12 +319,14 @@ module.exports = {
   ALL_TOOL_SPECS,
   generateImageToolSpec,
   setThemeToolSpec,
+  setAestheticToolSpec,
   continueStoryToolSpec,
   illustrateSceneToolSpec,
   recallFavoritesToolSpec,
   generateMusicToolSpec,
   browseGalleryToolSpec,
   SUPPORTED_THEMES,
+  SUPPORTED_AESTHETICS,
   dispatchTool,
   STYLE_TO_MODEL_KEY,
   ASPECT_TO_SIZE,

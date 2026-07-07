@@ -12,9 +12,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ConfigProvider, useConfig } from "./contexts/ConfigContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { MusicProvider } from "./contexts/MusicContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import SakuraMusicBar from "./components/sakura/SakuraMusicBar";
 import Sidebar from "./components/sakura/Sidebar";
+import AestheticToggle from "./components/sakura/AestheticToggle";
 import CompanionPanel from "./components/sakura/companion/CompanionPanel";
 import LoginModal from "./components/auth/LoginModal";
 import {
@@ -132,6 +133,7 @@ function SakuraShell({ children }) {
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   const { dispatch } = useCompanion();
+  const { aesthetic } = useTheme();
 
   const isActive = useCallback(
     (path) => {
@@ -167,7 +169,7 @@ function SakuraShell({ children }) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            transition={{ duration: aesthetic === "obscura" ? 0.38 : 0.25, ease: "easeOut" }}
           >
             {children}
           </motion.div>
@@ -197,6 +199,7 @@ function SakuraShell({ children }) {
               <span className="skr-hud-label">{item.label}</span>
             </Link>
           ))}
+          <AestheticToggle className="skr-hud-aesthetic" />
         </div>
       </nav>
     </div>

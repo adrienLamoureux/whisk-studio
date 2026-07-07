@@ -34,6 +34,7 @@ test("ALL_TOOL_SPECS includes the full tool fleet (v1.2 + companion v0)", () => 
     "generate_music",
     "illustrate_scene",
     "recall_favorites",
+    "set_aesthetic",
     "set_theme",
     "view_my_creations",
     "what_can_you_do",

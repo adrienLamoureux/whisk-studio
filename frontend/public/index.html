@@ -14,11 +14,11 @@
           var d = document.documentElement;
           var ls = window.localStorage;
           var a = ls.getItem("skr-aesthetic");
-          if (a !== "sakura" && a !== "obscura") a = "sakura";
+          if (a !== "sakura" && a !== "obscura") a = "obscura";
           d.setAttribute("data-aesthetic", a);
           var t = ls.getItem("skr-theme");
           if (a !== "obscura" && t && t !== "sakura") d.setAttribute("data-theme", t);
-          if ((ls.getItem("skr-brightness") || "light") === "light") d.setAttribute("data-brightness", "light");
+          if ((ls.getItem("skr-brightness") || "dark") === "light") d.setAttribute("data-brightness", "light");
         } catch (e) {}
       })();
     </script>

@@ -26,7 +26,7 @@ const STORAGE_KEY = "skr-theme";
 const BRIGHTNESS_KEY = "skr-brightness";
 const AESTHETIC_KEY = "skr-aesthetic";
 const DEFAULT_THEME = "sakura";
-const DEFAULT_AESTHETIC = "sakura";
+const DEFAULT_AESTHETIC = "obscura";
 // Must match the pre-paint fallback in public/index.html.
 const AESTHETIC_TRANSITION_MS = 900;
 
@@ -38,7 +38,8 @@ export function ThemeProvider({ children }) {
   });
 
   const [brightness, setBrightnessState] = useState(() => {
-    return localStorage.getItem(BRIGHTNESS_KEY) || "light";
+    // Dark is the flagship Obscura look (ADR-010); stored prefs still win.
+    return localStorage.getItem(BRIGHTNESS_KEY) || "dark";
   });
 
   const [aesthetic, setAestheticState] = useState(() => {

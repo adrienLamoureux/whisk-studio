@@ -292,4 +292,25 @@
   .skr-mode-transition::before { animation: none !important; opacity: 0 !important; }
   /* Shared spinner — slow instead of stop so loading state stays visible */
   .skr-spinner-ring { animation-duration: 3s !important; }
+  .skr-aesthetic-transition::before { animation: none !important; opacity: 0 !important; }
+}
+
+/* ─── Aesthetic-switch transition — chiaroscuro paint-stroke sweep ───
+   Triggered by ThemeContext.setAesthetic (transient class on <html>, removed
+   after 900ms). Lives here, not in styles/obscura/, because it must render
+   when switching in BOTH directions; var(--skr-accent) re-resolves mid-flip,
+   so the stroke reads gold-leaf entering Obscura and pink returning. */
+@keyframes skr-chiaroscuro-sweep {
+  0% { clip-path: polygon(0 0, 0 0, -18% 100%, -18% 100%); opacity: 1; }
+  55% { clip-path: polygon(0 0, 118% 0, 100% 100%, -18% 100%); opacity: 0.9; }
+  100% { clip-path: polygon(100% 0, 118% 0, 100% 100%, 100% 100%); opacity: 0; }
+}
+.skr-aesthetic-transition::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  pointer-events: none;
+  background: linear-gradient(105deg, color-mix(in srgb, var(--skr-accent) 30%, rgba(10, 8, 6, 0.9)) 0%, rgba(10, 8, 6, 0.92) 45%, rgba(10, 8, 6, 0.85) 100%);
+  animation: skr-chiaroscuro-sweep 800ms cubic-bezier(0.6, 0, 0.3, 1) forwards;
 }

@@ -41,6 +41,7 @@ import NAV_ITEMS from "../../../lib/nav/navItems";
 import CompanionCanvas from "../companion/CompanionCanvas";
 import MangaPanel from "../agent/MangaPanel";
 import Composer from "../agent/Composer";
+import AestheticToggle from "../AestheticToggle";
 import MemoryBadge from "../agent/MemoryBadge";
 import AgentSessionPicker from "../agent/AgentSessionPicker";
 
@@ -124,6 +125,7 @@ export default function CompanionStage() {
 
       {/* Top-left meta strip — parity with the retired AgentStage */}
       <div className="skr-companion-stage-meta">
+        <AestheticToggle />
         <MemoryBadge />
         <AgentSessionPicker />
         <button
