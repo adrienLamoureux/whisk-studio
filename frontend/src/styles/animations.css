@@ -290,4 +290,6 @@
   .skr-speed-lines { animation: none !important; }
   .skr-thinking-dot { animation: none !important; }
   .skr-mode-transition::before { animation: none !important; opacity: 0 !important; }
+  /* Shared spinner — slow instead of stop so loading state stays visible */
+  .skr-spinner-ring { animation-duration: 3s !important; }
 }

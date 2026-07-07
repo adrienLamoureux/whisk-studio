@@ -1,4 +1,5 @@
 import React from "react";
+import Spinner from "../shared/Spinner";
 
 export default function ModulePanel({ title, isLoading, action, children }) {
   return (
@@ -16,11 +17,7 @@ export default function ModulePanel({ title, isLoading, action, children }) {
         </p>
         {action}
       </div>
-      {isLoading ? (
-        <p style={{ fontSize: 12, color: "var(--skr-text-tertiary)" }}>Loading…</p>
-      ) : (
-        <div className="skr-info-list">{children}</div>
-      )}
+      {isLoading ? <Spinner size="sm" /> : <div className="skr-info-list">{children}</div>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import SolarisImageWall from "../components/shared/SolarisImageWall";
+import Modal from "../components/shared/Modal";
 import { useWhiskImages } from "./whisk/hooks/useWhiskImages";
 import { useImageStudio } from "./whisk/hooks/useImageStudio";
 import { useVideoGeneration } from "./whisk/hooks/useVideoGeneration";
@@ -287,19 +288,11 @@ export default function Whisk(props) {
           </div>
         )}
         {promptPreviewImage && (
-          <div className="skr-modal-backdrop" onClick={() => setPromptPreviewImage(null)}>
-            <div className="skr-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="skr-modal-header">
-                <span className="skr-modal-title">Prompt</span>
-                <button className="skr-modal-close" onClick={() => setPromptPreviewImage(null)}>
-                  ✕
-                </button>
-              </div>
-              <p style={{ fontSize: 13, color: "var(--skr-text-secondary)", lineHeight: 1.6 }}>
-                {promptPreviewImage?.prompt || "No prompt recorded."}
-              </p>
-            </div>
-          </div>
+          <Modal variant="panel" title="Prompt" onClose={() => setPromptPreviewImage(null)}>
+            <p style={{ fontSize: 13, color: "var(--skr-text-secondary)", lineHeight: 1.6 }}>
+              {promptPreviewImage?.prompt || "No prompt recorded."}
+            </p>
+          </Modal>
         )}
       </div>
 
