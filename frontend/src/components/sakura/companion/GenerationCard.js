@@ -170,8 +170,8 @@ export default function GenerationCard({ generation }) {
 
 const styles = {
   card: {
-    background: "rgba(255, 107, 157, 0.08)",
-    border: "1px solid rgba(255, 107, 157, 0.25)",
+    background: "color-mix(in srgb, var(--skr-accent) 8%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent) 25%, transparent)",
     borderRadius: 8,
     padding: "8px 10px",
     display: "flex",
@@ -201,8 +201,8 @@ const styles = {
   },
   generateBtn: {
     alignSelf: "flex-start",
-    background: "rgba(255, 107, 157, 0.2)",
-    border: "1px solid rgba(255, 107, 157, 0.4)",
+    background: "color-mix(in srgb, var(--skr-accent) 20%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent) 40%, transparent)",
     borderRadius: 6,
     color: "var(--skr-accent)",
     cursor: "pointer",
@@ -219,7 +219,7 @@ const styles = {
   spinner: {
     width: 12,
     height: 12,
-    border: "2px solid rgba(255, 107, 157, 0.2)",
+    border: "2px solid color-mix(in srgb, var(--skr-accent) 20%, transparent)",
     borderTopColor: "var(--skr-accent)",
     borderRadius: "50%",
     animation: "skr-spin 0.8s linear infinite",
@@ -237,14 +237,14 @@ const styles = {
   },
   errorText: {
     fontSize: 11,
-    color: "rgba(255, 100, 100, 0.9)",
+    color: "color-mix(in srgb, var(--skr-accent-danger) 90%, transparent)",
     flex: 1,
   },
   retryBtn: {
     background: "none",
-    border: "1px solid rgba(255, 100, 100, 0.3)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-danger) 30%, transparent)",
     borderRadius: 4,
-    color: "rgba(255, 100, 100, 0.9)",
+    color: "color-mix(in srgb, var(--skr-accent-danger) 90%, transparent)",
     cursor: "pointer",
     fontSize: 10,
     padding: "2px 8px",

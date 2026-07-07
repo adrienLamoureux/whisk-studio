@@ -155,7 +155,10 @@ export default function JobQueue({ apiBaseUrl, jobs, isLoading, onRefresh }) {
             className={`skr-chip${filter === s ? " accent" : ""}`}
             style={{
               cursor: "pointer",
-              background: filter === s ? "rgba(255,107,157,0.2)" : "rgba(255,107,157,0.06)",
+              background:
+                filter === s
+                  ? "color-mix(in srgb, var(--skr-accent) 20%, transparent)"
+                  : "color-mix(in srgb, var(--skr-accent) 6%, transparent)",
               border: "none",
               fontSize: 11,
             }}

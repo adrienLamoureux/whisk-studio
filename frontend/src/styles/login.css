@@ -12,8 +12,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 25% 30%, rgba(255, 107, 157, 0.1), transparent 50%),
-    radial-gradient(ellipse at 75% 70%, rgba(192, 132, 252, 0.08), transparent 50%);
+    radial-gradient(ellipse at 25% 30%, color-mix(in srgb, var(--skr-accent) 10%, transparent), transparent 50%),
+    radial-gradient(ellipse at 75% 70%, color-mix(in srgb, var(--skr-accent-secondary) 8%, transparent), transparent 50%);
   pointer-events: none;
 }
 
@@ -33,7 +33,7 @@
 .skr-login-emblem {
   font-size: 40px;
   color: var(--skr-accent);
-  filter: drop-shadow(0 0 12px rgba(255, 107, 157, 0.4));
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--skr-accent) 40%, transparent));
   margin-bottom: 16px;
 }
 
@@ -65,15 +65,15 @@
 .skr-loading-emblem {
   font-size: 48px;
   color: var(--skr-accent);
-  filter: drop-shadow(0 0 16px rgba(255, 107, 157, 0.5)) drop-shadow(0 0 32px rgba(192, 132, 252, 0.25));
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--skr-accent) 50%, transparent)) drop-shadow(0 0 32px color-mix(in srgb, var(--skr-accent-secondary) 25%, transparent));
   animation: skr-pulse 1.8s var(--skr-ease-in-out) infinite;
 }
 
 .skr-loading-text { font-size: 14px; color: var(--skr-text-secondary); animation: skr-fade-in var(--skr-duration-slow) var(--skr-ease-out) both; }
 
 @keyframes skr-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 16px rgba(255, 107, 157, 0.5)) drop-shadow(0 0 32px rgba(192, 132, 252, 0.25)); }
-  50% { opacity: 0.6; transform: scale(0.92); filter: drop-shadow(0 0 8px rgba(255, 107, 157, 0.3)); }
+  0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--skr-accent) 50%, transparent)) drop-shadow(0 0 32px color-mix(in srgb, var(--skr-accent-secondary) 25%, transparent)); }
+  50% { opacity: 0.6; transform: scale(0.92); filter: drop-shadow(0 0 8px color-mix(in srgb, var(--skr-accent) 30%, transparent)); }
 }
 
 /* ─── Auth callback ─── */
@@ -96,8 +96,8 @@
 
 .skr-modal-card {
   position: relative;
-  background: var(--skr-gradient-surface, #1a1a2e);
-  border: 1px solid var(--skr-border, rgba(255, 255, 255, 0.1));
+  background: var(--skr-gradient-surface);
+  border: 1px solid var(--skr-border);
   border-radius: 16px;
   padding: 40px 32px 32px;
   max-width: 380px;
@@ -106,8 +106,8 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  box-shadow: var(--skr-shadow-lg, 0 24px 64px rgba(0, 0, 0, 0.5));
-  animation: skr-scale-in var(--skr-duration-normal, 240ms) var(--skr-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  box-shadow: var(--skr-shadow-lg);
+  animation: skr-scale-in var(--skr-duration-normal) var(--skr-ease-out) both;
 }
 
 .skr-modal-close {
@@ -116,7 +116,7 @@
   right: 16px;
   background: none;
   border: none;
-  color: var(--skr-text-secondary, rgba(255, 255, 255, 0.5));
+  color: var(--skr-text-secondary);
   font-size: 20px;
   cursor: pointer;
   line-height: 1;
@@ -126,21 +126,21 @@
 }
 
 .skr-modal-close:hover {
-  color: var(--skr-text, rgba(255, 255, 255, 0.9));
+  color: var(--skr-text);
 }
 
 .skr-modal-title {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--skr-text, rgba(255, 255, 255, 0.9));
+  color: var(--skr-text);
   text-align: center;
 }
 
 .skr-modal-message {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--skr-text-secondary, rgba(255, 255, 255, 0.5));
+  color: var(--skr-text-secondary);
   text-align: center;
 }
 

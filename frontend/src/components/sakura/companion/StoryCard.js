@@ -65,8 +65,8 @@ export default function StoryCard({ storyAction, onNavigate }) {
 
 const styles = {
   card: {
-    background: "rgba(96, 165, 250, 0.07)",
-    border: "1px solid rgba(96, 165, 250, 0.25)",
+    background: "color-mix(in srgb, var(--skr-accent-info) 7%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-info) 25%, transparent)",
     borderRadius: 8,
     padding: "8px 10px",
     display: "flex",
@@ -78,12 +78,12 @@ const styles = {
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
-    color: "rgba(96, 165, 250, 0.9)",
+    color: "color-mix(in srgb, var(--skr-accent-info) 90%, transparent)",
     opacity: 0.8,
   },
   field: {
     background: "var(--skr-comp-input-bg)",
-    border: "1px solid rgba(96, 165, 250, 0.2)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-info) 20%, transparent)",
     borderRadius: 6,
     padding: "5px 8px",
     color: "var(--skr-text)",
@@ -93,10 +93,10 @@ const styles = {
   },
   startBtn: {
     alignSelf: "flex-start",
-    background: "rgba(96, 165, 250, 0.15)",
-    border: "1px solid rgba(96, 165, 250, 0.4)",
+    background: "color-mix(in srgb, var(--skr-accent-info) 15%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-info) 40%, transparent)",
     borderRadius: 6,
-    color: "rgba(96, 165, 250, 1)",
+    color: "var(--skr-accent-info)",
     cursor: "pointer",
     fontSize: 11,
     fontWeight: 600,
@@ -111,7 +111,7 @@ const styles = {
   },
   done: {
     fontSize: 11,
-    color: "rgba(96, 165, 250, 0.5)",
+    color: "color-mix(in srgb, var(--skr-accent-info) 50%, transparent)",
     fontStyle: "italic",
   },
 };

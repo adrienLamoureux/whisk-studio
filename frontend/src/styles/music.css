@@ -21,7 +21,7 @@
 }
 .skr-track-item--selected {
   border-color: var(--skr-accent);
-  background: rgba(255, 107, 157, 0.08);
+  background: color-mix(in srgb, var(--skr-accent) 8%, transparent);
 }
 .skr-track-title {
   font-weight: 700;
@@ -36,15 +36,15 @@
   color: var(--skr-text-secondary);
 }
 .skr-track-pill.mood {
-  background: rgba(255, 107, 157, 0.12);
+  background: color-mix(in srgb, var(--skr-accent) 12%, transparent);
   color: var(--skr-accent);
 }
 .skr-track-pill.energy {
-  background: rgba(74, 222, 128, 0.1);
+  background: color-mix(in srgb, var(--skr-accent-success) 10%, transparent);
   color: var(--skr-accent-success);
 }
 .skr-track-pill.tempo {
-  background: rgba(192, 132, 252, 0.12);
+  background: color-mix(in srgb, var(--skr-accent-secondary) 12%, transparent);
   color: var(--skr-accent-secondary);
 }
 .skr-track-tag {
@@ -52,7 +52,7 @@
   padding: 1px 6px;
   border-radius: 999px;
   font-size: 10px;
-  background: rgba(255, 107, 157, 0.1);
+  background: color-mix(in srgb, var(--skr-accent) 10%, transparent);
   color: var(--skr-accent);
 }
 .skr-track-audio {
@@ -190,7 +190,7 @@
     box-shadow var(--skr-duration-normal) var(--skr-ease-out);
 }
 .skr-music.is-playing .skr-music-pill {
-  border-color: rgba(255, 107, 157, 0.22);
+  border-color: color-mix(in srgb, var(--skr-accent) 22%, transparent);
 }
 .skr-music.is-peak .skr-music-pill {
   border-color: var(--skr-border-strong);
@@ -327,7 +327,7 @@
     var(--skr-accent),
     color-mix(in srgb, var(--skr-accent-secondary) 80%, transparent)
   );
-  box-shadow: 0 0 6px rgba(255, 107, 157, 0.5);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--skr-accent) 50%, transparent);
   transition: width 0.5s linear;
 }
 
@@ -424,7 +424,7 @@
   background: var(--skr-elevated);
 }
 .skr-music-panel-track.is-active {
-  background: rgba(255, 107, 157, 0.1);
+  background: color-mix(in srgb, var(--skr-accent) 10%, transparent);
 }
 
 .skr-music-panel-icon {

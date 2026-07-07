@@ -103,10 +103,10 @@ const styles = {
     position: "absolute",
     top: "calc(100% + 4px)",
     left: 0,
-    background: "rgba(26, 23, 38, 0.98)",
-    border: "1px solid rgba(192, 132, 252, 0.3)",
+    background: "var(--skr-comp-bg)",
+    border: "1px solid var(--skr-comp-border)",
     borderRadius: 8,
-    boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
+    boxShadow: "var(--skr-comp-shadow)",
     overflow: "hidden",
     minWidth: 160,
     zIndex: 20,
@@ -124,6 +124,6 @@ const styles = {
   },
   menuItemActive: {
     color: "var(--skr-accent)",
-    background: "rgba(255, 107, 157, 0.1)",
+    background: "color-mix(in srgb, var(--skr-accent) 10%, transparent)",
   },
 };

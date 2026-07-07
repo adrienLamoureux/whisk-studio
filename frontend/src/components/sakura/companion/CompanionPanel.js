@@ -377,8 +377,8 @@ const styles = {
   },
   replyBtn: {
     alignSelf: "flex-start",
-    background: "rgba(255,107,157,0.15)",
-    border: "1px solid rgba(255,107,157,0.3)",
+    background: "color-mix(in srgb, var(--skr-accent) 15%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent) 30%, transparent)",
     borderRadius: 4,
     color: "var(--skr-accent)",
     cursor: "pointer",

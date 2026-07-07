@@ -57,7 +57,7 @@
   letter-spacing: -0.02em;
   color: var(--skr-text);
   margin: 0;
-  text-shadow: 0 2px 12px rgba(255, 107, 157, 0.4);
+  text-shadow: 0 2px 12px color-mix(in srgb, var(--skr-accent) 40%, transparent);
 }
 
 .skr-masonry-subtitle {

@@ -58,7 +58,10 @@ export default function UsageDashboard({ apiBaseUrl }) {
               className={`skr-chip${window === w ? " accent" : ""}`}
               style={{
                 cursor: "pointer",
-                background: window === w ? "rgba(255,107,157,0.2)" : "rgba(255,107,157,0.06)",
+                background:
+                  window === w
+                    ? "color-mix(in srgb, var(--skr-accent) 20%, transparent)"
+                    : "color-mix(in srgb, var(--skr-accent) 6%, transparent)",
                 border: "none",
                 fontSize: 11,
               }}

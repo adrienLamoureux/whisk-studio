@@ -5,54 +5,54 @@
 [data-brightness="light"] .skr-card {
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(124, 58, 237, 0.06);
+    0 0 0 1px color-mix(in srgb, var(--skr-cta) 6%, transparent);
 }
 [data-brightness="light"] .skr-card:hover {
   box-shadow:
-    0 4px 16px rgba(124, 58, 237, 0.1),
-    0 0 0 1px rgba(124, 58, 237, 0.12);
+    0 4px 16px color-mix(in srgb, var(--skr-cta) 10%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--skr-cta) 12%, transparent);
 }
 
 /* CTA button — purple on light mode */
 [data-brightness="light"] .skr-btn-primary {
   background: linear-gradient(135deg, var(--skr-cta), var(--skr-accent-secondary));
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--skr-cta) 25%, transparent);
 }
 [data-brightness="light"] .skr-btn-primary:hover {
   background: linear-gradient(135deg, var(--skr-cta-hover), #9333ea);
-  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--skr-cta) 35%, transparent);
 }
 
 /* Secondary button */
 [data-brightness="light"] .skr-btn-secondary {
-  border-color: rgba(124, 58, 237, 0.3);
+  border-color: color-mix(in srgb, var(--skr-cta) 30%, transparent);
   color: var(--skr-cta);
 }
 [data-brightness="light"] .skr-btn-secondary:hover {
-  background: rgba(124, 58, 237, 0.06);
+  background: color-mix(in srgb, var(--skr-cta) 6%, transparent);
 }
 
 /* Ghost button */
 [data-brightness="light"] .skr-btn-ghost:hover {
-  background: rgba(124, 58, 237, 0.06);
+  background: color-mix(in srgb, var(--skr-cta) 6%, transparent);
   color: var(--skr-text);
 }
 
 /* Inputs */
 [data-brightness="light"] .skr-input {
   background: #ffffff;
-  border-color: rgba(124, 58, 237, 0.15);
+  border-color: color-mix(in srgb, var(--skr-cta) 15%, transparent);
 }
 [data-brightness="light"] .skr-input:focus {
   border-color: var(--skr-cta);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--skr-cta) 10%, transparent);
 }
 
 /* Active tab */
 [data-brightness="light"] .skr-tab.is-active {
   background: var(--skr-cta);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--skr-cta) 25%, transparent);
 }
 
 /* HUD nav on light mode */
@@ -60,11 +60,11 @@
   background: rgba(255, 255, 255, 0.92);
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(124, 58, 237, 0.08);
+    0 0 0 1px color-mix(in srgb, var(--skr-cta) 8%, transparent);
 }
 [data-brightness="light"] .skr-hud-item.is-active {
   color: var(--skr-cta);
-  background: rgba(124, 58, 237, 0.08);
+  background: color-mix(in srgb, var(--skr-cta) 8%, transparent);
 }
 [data-brightness="light"] .skr-hud-item:hover {
   color: var(--skr-cta);
@@ -73,52 +73,52 @@
 /* Topbar */
 [data-brightness="light"] .skr-topbar {
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 1px 0 rgba(124, 58, 237, 0.08);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--skr-cta) 8%, transparent);
 }
 [data-brightness="light"] .skr-brand-emblem {
-  filter: drop-shadow(0 0 6px rgba(255, 107, 157, 0.3));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--skr-accent) 30%, transparent));
 }
 
 /* Backdrop — very subtle gradient on light */
 [data-brightness="light"] .skr-backdrop {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(255, 107, 157, 0.04), transparent 60%),
-    radial-gradient(ellipse at 80% 15%, rgba(124, 58, 237, 0.03), transparent 55%);
+    radial-gradient(ellipse at 20% 50%, color-mix(in srgb, var(--skr-accent) 4%, transparent), transparent 60%),
+    radial-gradient(ellipse at 80% 15%, color-mix(in srgb, var(--skr-cta) 3%, transparent), transparent 55%);
 }
 
 /* Membership banner (top promo bar) */
 [data-brightness="light"] .skr-promo-bar {
-  background: linear-gradient(90deg, #7c3aed, #ff6b9d);
+  background: linear-gradient(90deg, var(--skr-cta), var(--skr-accent));
   color: #fff;
 }
 
 /* Sidebar on light mode */
 [data-brightness="light"] .skr-sidebar {
   background: #fafafb;
-  border-right-color: rgba(124, 58, 237, 0.08);
-  box-shadow: 1px 0 0 rgba(124, 58, 237, 0.06);
+  border-right-color: color-mix(in srgb, var(--skr-cta) 8%, transparent);
+  box-shadow: 1px 0 0 color-mix(in srgb, var(--skr-cta) 6%, transparent);
 }
 [data-brightness="light"] .skr-sidebar-item.is-active {
-  background: rgba(124, 58, 237, 0.08);
+  background: color-mix(in srgb, var(--skr-cta) 8%, transparent);
   color: var(--skr-cta);
   border-left-color: var(--skr-cta);
 }
 [data-brightness="light"] .skr-sidebar-item:hover {
-  background: rgba(124, 58, 237, 0.05);
+  background: color-mix(in srgb, var(--skr-cta) 5%, transparent);
   color: var(--skr-cta);
 }
 
 /* Generator sidebar (right panel) */
 [data-brightness="light"] .skr-gen-sidebar {
   background: #fafafb;
-  border-left-color: rgba(124, 58, 237, 0.08);
+  border-left-color: color-mix(in srgb, var(--skr-cta) 8%, transparent);
 }
 [data-brightness="light"] .skr-gen-section-title {
   color: var(--skr-cta);
 }
 [data-brightness="light"] .skr-model-thumb.is-selected {
   border-color: var(--skr-cta);
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--skr-cta) 20%, transparent);
 }
 
 /* Gallery card */
@@ -136,11 +136,11 @@
 [data-brightness="light"] .skr-music-pill,
 [data-brightness="light"] .skr-music-lib {
   background: rgba(255, 255, 255, 0.94);
-  border-color: rgba(124, 58, 237, 0.15);
+  border-color: color-mix(in srgb, var(--skr-cta) 15%, transparent);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 [data-brightness="light"] .skr-music.is-playing .skr-music-pill {
-  border-color: rgba(255, 107, 157, 0.28);
+  border-color: color-mix(in srgb, var(--skr-accent) 28%, transparent);
 }
 [data-brightness="light"] .skr-music-chip { color: var(--skr-text-secondary); }
 [data-brightness="light"] .skr-music-chip:hover { color: var(--skr-cta); }
@@ -153,13 +153,13 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 [data-brightness="light"] .skr-tool-card:hover {
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.12);
-  border-color: rgba(124, 58, 237, 0.2);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--skr-cta) 12%, transparent);
+  border-color: color-mix(in srgb, var(--skr-cta) 20%, transparent);
 }
 
 /* Prompt bar */
-[data-brightness="light"] .skr-prompt-bar-input { background: #ffffff; border-color: rgba(124, 58, 237, 0.15); }
-[data-brightness="light"] .skr-prompt-bar-input:focus { border-color: var(--skr-cta); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); }
+[data-brightness="light"] .skr-prompt-bar-input { background: #ffffff; border-color: color-mix(in srgb, var(--skr-cta) 15%, transparent); }
+[data-brightness="light"] .skr-prompt-bar-input:focus { border-color: var(--skr-cta); box-shadow: 0 0 0 3px color-mix(in srgb, var(--skr-cta) 10%, transparent); }
 
 /* Stats */
 [data-brightness="light"] .skr-stat-value {
@@ -168,6 +168,6 @@
 
 /* Chip */
 [data-brightness="light"] .skr-chip {
-  background: rgba(124, 58, 237, 0.08);
+  background: color-mix(in srgb, var(--skr-cta) 8%, transparent);
   color: var(--skr-cta);
 }

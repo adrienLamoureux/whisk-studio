@@ -174,5 +174,5 @@ input.skr-flag-cohort { cursor: text; }
 .skr-flag-cohort:focus {
   outline: none;
   border-color: var(--skr-accent);
-  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--skr-accent) 12%, transparent);
 }

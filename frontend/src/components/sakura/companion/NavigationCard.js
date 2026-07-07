@@ -46,8 +46,8 @@ export default function NavigationCard({ navigation, onNavigate }) {
 
 const styles = {
   card: {
-    background: "rgba(192, 132, 252, 0.08)",
-    border: "1px solid rgba(192, 132, 252, 0.3)",
+    background: "color-mix(in srgb, var(--skr-accent-secondary) 8%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-secondary) 30%, transparent)",
     borderRadius: 8,
     padding: "8px 10px",
     display: "flex",
@@ -59,7 +59,7 @@ const styles = {
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
-    color: "rgba(192, 132, 252, 0.9)",
+    color: "color-mix(in srgb, var(--skr-accent-secondary) 90%, transparent)",
     opacity: 0.8,
   },
   pageName: {
@@ -69,10 +69,10 @@ const styles = {
   },
   goBtn: {
     alignSelf: "flex-start",
-    background: "rgba(192, 132, 252, 0.15)",
-    border: "1px solid rgba(192, 132, 252, 0.4)",
+    background: "color-mix(in srgb, var(--skr-accent-secondary) 15%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-secondary) 40%, transparent)",
     borderRadius: 6,
-    color: "rgba(192, 132, 252, 1)",
+    color: "var(--skr-accent-secondary)",
     cursor: "pointer",
     fontSize: 11,
     fontWeight: 600,
@@ -81,7 +81,7 @@ const styles = {
   },
   done: {
     fontSize: 11,
-    color: "rgba(192, 132, 252, 0.5)",
+    color: "color-mix(in srgb, var(--skr-accent-secondary) 50%, transparent)",
     fontStyle: "italic",
   },
 };

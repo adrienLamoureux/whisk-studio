@@ -44,9 +44,9 @@ export const styles = {
   },
   forgetBtn: {
     background: "none",
-    border: "1px solid rgba(255,100,100,0.2)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-danger) 20%, transparent)",
     borderRadius: 4,
-    color: "rgba(255,100,100,0.7)",
+    color: "color-mix(in srgb, var(--skr-accent-danger) 70%, transparent)",
     cursor: "pointer",
     fontSize: 9,
     padding: "1px 5px",
@@ -61,7 +61,7 @@ export const styles = {
     flexDirection: "column",
     gap: 5,
     scrollbarWidth: "thin",
-    scrollbarColor: "rgba(192,132,252,0.2) transparent",
+    scrollbarColor: "var(--skr-comp-scrollbar) transparent",
   },
   empty: {
     color: "var(--skr-text-muted)",

@@ -149,7 +149,7 @@
 .skr-character-walker svg {
   display: block;
   animation: skr-char-bob 0.45s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.5));
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--skr-accent-secondary) 50%, transparent));
 }
 
 /* Legs */

@@ -22,7 +22,7 @@
 .skr-companion-stage-backdrop {
   position: absolute;
   inset: 0;
-  background: var(--skr-gradient-hero, radial-gradient(circle at 30% 20%, rgba(255, 107, 157, 0.18), transparent 60%));
+  background: var(--skr-gradient-hero);
   opacity: 0.5;
   pointer-events: none;
   z-index: 0;
@@ -54,7 +54,7 @@
 }
 .skr-companion-exit:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--skr-accent) 22%, transparent);
 }
 
 /* ── Top-left meta strip — memory badge, session picker, export ────────── */

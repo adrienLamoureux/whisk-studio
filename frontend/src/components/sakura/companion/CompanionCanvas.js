@@ -22,7 +22,7 @@ function ClickRipple({ x, y, onDone }) {
         width: 36,
         height: 36,
         borderRadius: "50%",
-        border: "2px solid rgba(255,107,157,0.7)",
+        border: "2px solid color-mix(in srgb, var(--skr-accent) 70%, transparent)",
         animation: "skr-ripple var(--skr-duration-slow) var(--skr-ease-out) forwards",
         pointerEvents: "none",
       }}

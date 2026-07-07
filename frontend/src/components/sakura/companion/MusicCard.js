@@ -66,8 +66,8 @@ export default function MusicCard({ musicAction, onNavigate }) {
 
 const styles = {
   card: {
-    background: "rgba(251, 191, 36, 0.07)",
-    border: "1px solid rgba(251, 191, 36, 0.25)",
+    background: "color-mix(in srgb, var(--skr-accent-warning) 7%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-warning) 25%, transparent)",
     borderRadius: 8,
     padding: "8px 10px",
     display: "flex",
@@ -79,12 +79,12 @@ const styles = {
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
-    color: "rgba(251, 191, 36, 0.9)",
+    color: "color-mix(in srgb, var(--skr-accent-warning) 90%, transparent)",
     opacity: 0.8,
   },
   field: {
     background: "var(--skr-comp-input-bg)",
-    border: "1px solid rgba(251, 191, 36, 0.2)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-warning) 20%, transparent)",
     borderRadius: 6,
     padding: "5px 8px",
     color: "var(--skr-text)",
@@ -94,10 +94,10 @@ const styles = {
   },
   generateBtn: {
     alignSelf: "flex-start",
-    background: "rgba(251, 191, 36, 0.12)",
-    border: "1px solid rgba(251, 191, 36, 0.35)",
+    background: "color-mix(in srgb, var(--skr-accent-warning) 12%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--skr-accent-warning) 35%, transparent)",
     borderRadius: 6,
-    color: "rgba(251, 191, 36, 1)",
+    color: "var(--skr-accent-warning)",
     cursor: "pointer",
     fontSize: 11,
     fontWeight: 600,
@@ -112,7 +112,7 @@ const styles = {
   },
   done: {
     fontSize: 11,
-    color: "rgba(251, 191, 36, 0.5)",
+    color: "color-mix(in srgb, var(--skr-accent-warning) 50%, transparent)",
     fontStyle: "italic",
   },
 };
