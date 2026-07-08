@@ -72,3 +72,4 @@
 - 2026-07-04T10:09:00.792Z | event=ui-smoke | stage=dev / result=passed
 - 2026-07-04T10:09:30.000Z | event=deploy | stack=StaticWebAWSAIStack-dev / cloudfront=https://d2l9b1xmucsb19.cloudfront.net / api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ / commit=63f613c / sanity=passed / ui_smoke=passed / note=smoke re-run green (first run had a transient CloudFront networkidle timeout on home-page)
 - 2026-07-08T20:59:37.887Z | event=deploy | stack=StaticWebAWSAIStack-dev / cloudfront=https://d2l9b1xmucsb19.cloudfront.net / api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ / commit=ea9c752 / sanity=passed / ui_smoke=passed
+- 2026-07-08T21:19:41.562Z | event=deploy | stack=StaticWebAWSAIStack-dev / cloudfront=https://d2l9b1xmucsb19.cloudfront.net / api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ / commit=f45df3b / sanity=passed / ui_smoke=passed
