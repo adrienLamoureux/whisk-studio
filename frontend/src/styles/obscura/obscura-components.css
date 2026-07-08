@@ -74,6 +74,8 @@
 /* Masonry hero: half-speed scroll, sepia-muted imagery, ink overlay */
 [data-aesthetic="obscura"] .skr-masonry-column { --skr-masonry-duration: 180s; }
 [data-aesthetic="obscura"] .skr-masonry-hero img { filter: saturate(0.55) sepia(0.22) contrast(1.05); }
+/* Painted defaults (public-domain chiaroscuro canvases) need no anime-muting sepia */
+[data-aesthetic="obscura"] .skr-masonry-hero--painted img { filter: saturate(0.92) contrast(1.02); }
 [data-aesthetic="obscura"] .skr-masonry-overlay { background: linear-gradient(rgba(10, 8, 6, 0.35), rgba(10, 8, 6, 0.6)); }
 /* Speed lines read as etching strokes, barely-there */
 [data-aesthetic="obscura"] .skr-speed-lines { opacity: 0.35; }

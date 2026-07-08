@@ -1,5 +1,7 @@
 import React, { useMemo } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 import SOL_MASONRY_DEFAULTS from "../data/skr-masonry-defaults.json";
+import OBSCURA_MASONRY_DEFAULTS from "../data/skr-masonry-obscura-defaults.json";
 
 const COLUMNS = [
   { id: "col-a", durationSeconds: 86, startOffset: "0%" },
@@ -25,13 +27,28 @@ function buildLoopedImages(base, repeat) {
  *   images  – array of { id, src }  (falls back to bundled defaults when empty)
  *   title   – headline text
  *   subtitle – sub-headline text
+ *
+ * Defaults are aesthetic-aware (ADR-010): Sakura shows anime art, Obscura
+ * shows public-domain chiaroscuro/Belle Époque paintings (self-hosted under
+ * public/masonry/obscura/). The `--painted` modifier lets obscura CSS skip
+ * the sepia mute that is meant for anime community images.
  */
 export default function SolarisMasonry({ images = [], title, subtitle }) {
-  const base = images.length > 0 ? images : SOL_MASONRY_DEFAULTS;
+  const { aesthetic } = useTheme() || {};
+  const usingDefaults = images.length === 0;
+  const isPainted = usingDefaults && aesthetic === "obscura";
+  const base = !usingDefaults
+    ? images
+    : isPainted
+      ? OBSCURA_MASONRY_DEFAULTS
+      : SOL_MASONRY_DEFAULTS;
   const looped = useMemo(() => buildLoopedImages(base, REPEAT_COUNT), [base]);
 
   return (
-    <div className="skr-masonry-hero" aria-hidden="true">
+    <div
+      className={`skr-masonry-hero${isPainted ? " skr-masonry-hero--painted" : ""}`}
+      aria-hidden="true"
+    >
       <div className="skr-masonry-grid">
         {COLUMNS.map((col) => (
           <div

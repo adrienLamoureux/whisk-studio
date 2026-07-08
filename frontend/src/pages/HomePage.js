@@ -4,6 +4,7 @@ import SolarisMasonry from "../components/SolarisMasonry";
 import GalleryCard from "../components/shared/GalleryCard";
 import { useConfig } from "../contexts/ConfigContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 import { listDirectorMasonryImages } from "../services/operations";
 import {
   listSharedImages,
@@ -21,6 +22,7 @@ const FEED_TABS = [
 export default function HomePage() {
   const { apiBaseUrl } = useConfig();
   const { isAuthenticated } = useAuth();
+  const { aesthetic } = useTheme() || {};
   const navigate = useNavigate();
   const [quickPrompt, setQuickPrompt] = useState("");
   // Hero
@@ -119,7 +121,11 @@ export default function HomePage() {
       <SolarisMasonry
         images={masonryApiImages}
         title="Whisk Studio"
-        subtitle="Anime-first creative workspace — generate, direct, tell stories."
+        subtitle={
+          aesthetic === "obscura"
+            ? "A painterly creative atelier — generate, direct, tell stories."
+            : "Anime-first creative workspace — generate, direct, tell stories."
+        }
       />
 
       {/* Quick prompt bar */}
