@@ -117,6 +117,7 @@ export const styles = {
     fontSize: 13,
     lineHeight: 1.5,
     maxWidth: "90%",
+    animation: "skr-bubble-in var(--skr-duration-normal) var(--skr-ease-spring) both",
   },
   bubbleUser: {
     alignSelf: "flex-end",

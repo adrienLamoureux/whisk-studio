@@ -79,6 +79,7 @@ export const styles = {
     fontSize: 12,
     lineHeight: 1.45,
     maxWidth: "92%",
+    animation: "skr-bubble-in var(--skr-duration-normal) var(--skr-ease-spring) both",
   },
   bubbleHiyori: {
     alignSelf: "flex-start",

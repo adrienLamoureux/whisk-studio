@@ -25,6 +25,11 @@
 [data-aesthetic="obscura"] .skr-page-header { animation: skr-obscura-brush-reveal 600ms var(--skr-ease-out) both; }
 [data-aesthetic="obscura"] .skr-login-emblem, [data-aesthetic="obscura"] .skr-loading-emblem { animation: skr-obscura-flicker 4.5s linear infinite; }
 [data-aesthetic="obscura"] .skr-sidebar-brand-emblem { animation: skr-obscura-flicker 7s linear infinite; }
+/* Overrides of the shared base effects (layout.css / components.css):
+   gilt hairline instead of the rounded accent underline; warm-white gleam */
+[data-aesthetic="obscura"] .skr-page-title::after { height: 1px; border-radius: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--skr-accent) 75%, transparent), transparent); }
+/* rgba(255,244,214,…) = warm-white highlight (not an accent token) */
+[data-aesthetic="obscura"] .skr-btn-primary::after, [data-aesthetic="obscura"] .skr-gen-generate-btn::after { background: linear-gradient(105deg, transparent 38%, rgba(255, 244, 214, 0.28) 50%, transparent 62%); }
 
 @media (prefers-reduced-motion: reduce) {
   [data-aesthetic="obscura"] .skr-backdrop { animation: none !important; }

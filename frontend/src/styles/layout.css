@@ -123,6 +123,19 @@
   letter-spacing: -0.02em;
 }
 
+/* Signature underline — draws in beneath every page title (Obscura restyles it) */
+.skr-page-title::after {
+  content: "";
+  display: block;
+  width: 148px;
+  height: 2px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--skr-accent), color-mix(in srgb, var(--skr-accent-secondary) 55%, transparent));
+  transform-origin: left;
+  animation: skr-underline-draw var(--skr-duration-slow) var(--skr-ease-out) 150ms both;
+}
+
 .skr-page-subtitle {
   margin: 4px 0 0;
   font-size: 14px;
@@ -154,19 +167,19 @@
 .skr-sidebar-item-label { white-space: nowrap; overflow: hidden; }
 
 .skr-sidebar-footer { padding: 10px 8px; border-top: 1px solid var(--skr-border); display: flex; align-items: center; gap: 6px; flex-shrink: 0; overflow: hidden; }
-.skr-sidebar-brightness { background: none; border: none; color: var(--skr-text-muted); font-size: 16px; cursor: pointer; padding: 4px; border-radius: 6px; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
+.skr-sidebar-brightness { background: none; border: none; color: var(--skr-text-muted); font-size: 16px; cursor: pointer; padding: 4px; border-radius: 6px; flex-shrink: 0; transition: color var(--skr-duration-fast) var(--skr-ease-out); line-height: 1; }
 .skr-sidebar-brightness:hover { color: var(--skr-text); }
-.skr-aesthetic-toggle { background: none; border: none; color: var(--skr-text-muted); font-size: 15px; cursor: pointer; padding: 4px; border-radius: 6px; flex-shrink: 0; transition: color 0.15s; line-height: 1; }
-.skr-aesthetic-toggle:hover { color: var(--skr-accent); }
+.skr-aesthetic-toggle { background: none; border: none; color: var(--skr-text-muted); font-size: 15px; cursor: pointer; padding: 4px; border-radius: 6px; flex-shrink: 0; transition: color var(--skr-duration-fast) var(--skr-ease-out), transform var(--skr-duration-normal) var(--skr-ease-spring); line-height: 1; }
+.skr-aesthetic-toggle:hover { color: var(--skr-accent); transform: rotate(-18deg) scale(1.12); }
 .skr-sidebar-theme { padding: 8px; border-top: 1px solid var(--skr-border); flex-shrink: 0; }
 .skr-hud-aesthetic { padding: 6px 10px; font-size: 16px; align-self: stretch; }
 .skr-sidebar-auth { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
 .skr-sidebar-user { font-size: 11px; color: var(--skr-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-.skr-sidebar-auth-btn { background: none; border: 1px solid var(--skr-border); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--skr-text-muted); cursor: pointer; flex-shrink: 0; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.skr-sidebar-auth-btn { background: none; border: 1px solid var(--skr-border); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--skr-text-muted); cursor: pointer; flex-shrink: 0; transition: background var(--skr-duration-fast) var(--skr-ease-out), color var(--skr-duration-fast) var(--skr-ease-out); white-space: nowrap; }
 .skr-sidebar-auth-btn:hover { background: var(--skr-elevated); color: var(--skr-text); }
 .skr-sidebar-auth-btn--fill { background: var(--skr-cta, var(--skr-accent)); border-color: transparent; color: #fff; }
 .skr-sidebar-auth-btn--fill:hover { background: var(--skr-cta-hover, var(--skr-accent-hover)); }
-.skr-sidebar-collapse-btn { background: none; border: none; color: var(--skr-text-muted); font-size: 16px; cursor: pointer; padding: 4px 6px; flex-shrink: 0; transition: color 0.15s, background 0.15s; line-height: 1; border-radius: 6px; }
+.skr-sidebar-collapse-btn { background: none; border: none; color: var(--skr-text-muted); font-size: 16px; cursor: pointer; padding: 4px 6px; flex-shrink: 0; transition: color var(--skr-duration-fast) var(--skr-ease-out), background var(--skr-duration-fast) var(--skr-ease-out); line-height: 1; border-radius: 6px; }
 .skr-sidebar-collapse-btn:hover { color: var(--skr-text); background: var(--skr-elevated); }
 
 /* ─── Desktop layout: main offset by sidebar ─── */

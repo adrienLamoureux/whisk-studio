@@ -43,6 +43,15 @@
 .skr-btn-primary:active { transform: translateY(0); }
 .skr-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
 
+/* One-shot light sheen on hover-in (Obscura swaps in a warm-white gradient) */
+.skr-btn-primary, .skr-gen-generate-btn { position: relative; overflow: hidden; }
+.skr-btn-primary::after, .skr-gen-generate-btn::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.25) 50%, transparent 62%);
+  transform: translateX(-110%) skewX(-12deg);
+}
+.skr-btn-primary:hover:not(:disabled)::after, .skr-gen-generate-btn:hover:not(:disabled)::after { animation: skr-btn-gleam var(--skr-duration-slow) var(--skr-ease-out); }
+
 .skr-btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -290,7 +299,7 @@
 .skr-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--skr-border); }
 .skr-modal-title { margin: 0; font-size: 1.2rem; font-weight: 600; color: var(--skr-text); text-align: center; }
 .skr-modal-card--panel .skr-modal-title { font-family: var(--skr-font-display); font-size: 16px; font-weight: 700; text-align: left; }
-.skr-modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--skr-text-secondary); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 4px; transition: color 0.15s; }
+.skr-modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--skr-text-secondary); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 4px; transition: color var(--skr-duration-fast) var(--skr-ease-out); }
 .skr-modal-close:hover { color: var(--skr-text); }
 .skr-modal-card--panel .skr-modal-close { position: static; color: var(--skr-text-muted); font-size: 18px; padding: 0; }
 .skr-modal-card--panel .skr-modal-close:hover { color: var(--skr-accent); }
@@ -306,7 +315,8 @@
 /* ─── Lightbox ─── */
 .skr-lightbox {
   position: fixed; inset: 0;
-  background: rgba(13, 11, 20, 0.95);
+  background: var(--skr-overlay);
+  backdrop-filter: blur(12px);
   z-index: 210;
   display: flex; align-items: center; justify-content: center;
   cursor: zoom-out;
@@ -320,7 +330,9 @@
   width: 40px; height: 40px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
+  transition: border-color var(--skr-duration-fast) var(--skr-ease-out), color var(--skr-duration-fast) var(--skr-ease-out), transform var(--skr-duration-normal) var(--skr-ease-spring);
 }
+.skr-lightbox-close:hover { border-color: var(--skr-accent); transform: rotate(90deg); }
 
 /* ─── Chat ─── */
 .skr-chat-container { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; }
@@ -330,6 +342,7 @@
   background: var(--skr-card);
   color: var(--skr-text);
   line-height: 1.6;
+  animation: skr-bubble-in var(--skr-duration-normal) var(--skr-ease-spring) both;
 }
 .skr-chat-bubble.user {
   background: linear-gradient(135deg, color-mix(in srgb, var(--skr-accent) 15%, transparent), color-mix(in srgb, var(--skr-accent-secondary) 10%, transparent));

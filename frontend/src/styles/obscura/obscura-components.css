@@ -79,3 +79,9 @@
 [data-aesthetic="obscura"] .skr-masonry-overlay { background: linear-gradient(rgba(10, 8, 6, 0.35), rgba(10, 8, 6, 0.6)); }
 /* Speed lines read as etching strokes, barely-there */
 [data-aesthetic="obscura"] .skr-speed-lines { opacity: 0.35; }
+
+/* ─── Interactive elements: Obscura never lifts — gilt light does the work ─── */
+[data-aesthetic="obscura"] .skr-gallery-card:hover { transform: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--skr-accent) 22%, transparent), var(--skr-shadow-md); }
+[data-aesthetic="obscura"] .skr-feed-tab:hover { transform: none; }
+[data-aesthetic="obscura"] .skr-lightbox-close:hover { transform: none; }
+[data-aesthetic="obscura"] .skr-manga-panel { border-radius: var(--skr-radius-md); }

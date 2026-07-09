@@ -6,12 +6,12 @@
   background: var(--skr-card);
   border: 1px solid var(--skr-border);
   transition:
-    box-shadow 0.2s,
-    transform 0.15s;
+    box-shadow var(--skr-duration-fast) var(--skr-ease-out),
+    transform var(--skr-duration-fast) var(--skr-ease-out);
   cursor: pointer;
 }
 .skr-gallery-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--skr-shadow-md);
   transform: translateY(-2px);
 }
 
@@ -26,7 +26,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.3s;
+  transition: transform var(--skr-duration-normal) var(--skr-ease-out);
 }
 .skr-gallery-card:hover .skr-gallery-card-img {
   transform: scale(1.03);
@@ -52,7 +52,7 @@
   inset: 0;
   background: linear-gradient(transparent 40%, rgba(0, 0, 0, 0.55));
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--skr-duration-fast) var(--skr-ease-out);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -200,7 +200,7 @@
   border-radius: 12px;
   margin-bottom: 24px;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity var(--skr-duration-fast) var(--skr-ease-out);
 }
 .skr-promo-bar:hover {
   opacity: 0.92;
@@ -222,7 +222,7 @@
 
 /* ─── Quick Prompt Bar (Home Page) ─── */
 .skr-prompt-bar { display: flex; gap: 10px; align-items: center; margin: 20px 0 28px; }
-.skr-prompt-bar-input { flex: 1; padding: 13px 18px; background: var(--skr-surface); border: 1px solid var(--skr-border); border-radius: 999px; color: var(--skr-text); font-size: 14px; font-family: var(--skr-font-body); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+.skr-prompt-bar-input { flex: 1; padding: 13px 18px; background: var(--skr-surface); border: 1px solid var(--skr-border); border-radius: 999px; color: var(--skr-text); font-size: 14px; font-family: var(--skr-font-body); outline: none; transition: border-color var(--skr-duration-fast) var(--skr-ease-out), box-shadow var(--skr-duration-fast) var(--skr-ease-out); }
 .skr-prompt-bar-input::placeholder { color: var(--skr-text-muted); }
 .skr-prompt-bar-input:focus { border-color: var(--skr-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--skr-accent) 10%, transparent), var(--skr-shadow-sm); }
 .skr-prompt-bar-btn { padding: 13px 28px; border-radius: 999px; white-space: nowrap; font-size: 14px; flex-shrink: 0; }
