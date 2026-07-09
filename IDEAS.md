@@ -5,7 +5,7 @@ the design variants were removed on 2026-07-04 (see [ADR-008](docs/adr/008-remov
 
 ## Registry
 <!-- IDEA_REGISTRY_START -->
-- idea=dev | stack=StaticWebAWSAIStack-dev | status=LIVE | last_action=2026-07-08T21:19:41.562Z | cloudfront=https://d2l9b1xmucsb19.cloudfront.net | api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ | folder=ideas/dev | note=Deployed f45df3b
+- idea=dev | stack=StaticWebAWSAIStack-dev | status=LIVE | last_action=2026-07-09T21:24:40.991Z | cloudfront=https://d2l9b1xmucsb19.cloudfront.net | api=https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/ | folder=ideas/dev | note=Deployed 6ac36ff
 <!-- IDEA_REGISTRY_END -->
 
 ## Operating Rules
