@@ -427,7 +427,7 @@ export default function LoraManagement() {
           style={{
             marginTop: 16,
             fontSize: 13,
-            color: "#ef4444",
+            color: "var(--skr-accent-danger)",
             background: "#fef2f2",
             padding: "8px 12px",
             borderRadius: 6,

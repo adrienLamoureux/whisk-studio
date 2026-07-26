@@ -4,15 +4,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import AestheticToggle from "./AestheticToggle";
 import ThemeSwitcher from "./ThemeSwitcher";
+import NAV_ITEMS from "../../lib/nav/navItems";
 
 const STORAGE_KEY = "skr-sidebar-collapsed";
-
-const NAV_ITEMS = [
-  { label: "Realm", path: "/", icon: "✦", emoji: "🏠", isPublic: true },
-  { label: "Atelier", path: "/atelier", icon: "◈", emoji: "🎨", isPublic: false },
-  { label: "Chronicle", path: "/chronicle", icon: "▤", emoji: "📖", isPublic: false },
-  { label: "Sanctum", path: "/sanctum", icon: "⚙", emoji: "⚙️", requiredRole: "admin" },
-];
 
 export default function Sidebar() {
   const location = useLocation();

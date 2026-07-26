@@ -75,7 +75,9 @@ export default function AuthCallback() {
         </h1>
         {error ? (
           <>
-            <p style={{ fontSize: 13, color: "#ef4444", marginBottom: 20 }}>{error}</p>
+            <p style={{ fontSize: 13, color: "var(--skr-accent-danger)", marginBottom: 20 }}>
+              {error}
+            </p>
             <button className="skr-btn-secondary" onClick={() => navigate("/login")}>
               Back to login
             </button>

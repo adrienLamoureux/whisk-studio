@@ -1,11 +1,8 @@
 const { Router } = require("express");
+const { filterActiveStoryPresets } = require("./active-presets");
 
 module.exports = function registerStorySeedRoutes(deps) {
   const { mediaTable, ensureStoryPresets, ensureStoryCharacters, storyPresets } = deps;
-
-  const ACTIVE_STORY_PRESET_IDS = new Set(["frieren-road"]);
-  const filterActiveStoryPresets = (presets = []) =>
-    presets.filter((preset) => ACTIVE_STORY_PRESET_IDS.has(preset?.id));
 
   const router = Router();
 

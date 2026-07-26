@@ -220,7 +220,12 @@ export default function LoraProfileEditor({
               <button
                 type="button"
                 className="skr-btn-secondary"
-                style={{ fontSize: 11, padding: "3px 8px", color: "#ef4444", flexShrink: 0 }}
+                style={{
+                  fontSize: 11,
+                  padding: "3px 8px",
+                  color: "var(--skr-accent-danger)",
+                  flexShrink: 0,
+                }}
                 onClick={onDeleteProfile}
                 disabled={isSaving}
                 title="Delete this profile"

@@ -107,6 +107,34 @@ const storyPresets = [
     opening:
       "The road opens into a quiet valley, the wind carrying distant bells. Frieren walks ahead in thoughtful silence, then glances back with a small smile. “We can rest in the next village—or take the ridge and see the lakes at sunset. What feels right to you?”",
   },
+  {
+    id: "moonlit-tavern",
+    name: "The Moonlit Tavern",
+    synopsis:
+      "Rain taps the windows of a warm tavern while a guarded traveler trades rumors about ancient ruins. Trust, secrets, and a choice to make before morning.",
+    protagonistId: "frieren",
+    worldPrompt:
+      "cozy fantasy tavern at night, lantern light, wooden beams, rain on leaded windows, wet cobblestone streets outside",
+    stylePrompt:
+      "anime cinematic illustration, warm amber palette, chiaroscuro lantern lighting, delicate line art, painterly shading",
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    opening:
+      "Rain drums softly against the tavern windows as Frieren settles at a corner table, steam curling from her cup. Across the room, a hooded traveler keeps glancing your way. She follows your gaze and murmurs, “They've been watching us since we came in. Shall we invite them over—or enjoy the quiet a little longer?”",
+  },
+  {
+    id: "celestial-ruins",
+    name: "The Celestial Ruins",
+    synopsis:
+      "Ancient stones drift above the clouds, etched with starlit runes and guarded by a silent sentinel. A relic waits for those the ruins deem worthy.",
+    protagonistId: "frieren",
+    worldPrompt:
+      "floating ancient ruins above the clouds at night, glowing star runes, suspended stone bridges, pale starlight, endless sky",
+    stylePrompt:
+      "anime cinematic illustration, cool celestial palette, luminous rune glow, delicate line art, painterly shading",
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    opening:
+      "The last stair crests the cloud line, and the ruins unfold above you—floating stones stitched together by threads of starlight. Frieren tilts her head, eyes reflecting the runes' slow pulse. “This magic is older than anything I've catalogued. The runes respond to intent... so, do we announce ourselves politely, or explore first and apologize later?”",
+  },
 ];
 
 const promptHelperDefaults = {

@@ -87,6 +87,7 @@ const {
 } = require("./keys");
 const { createCompanionMemory } = require("./companion-memory");
 const { createAgentMemory } = require("./agent-memory");
+const { createStoryMemory } = require("./story-memory");
 const { createAgentState } = require("./agent-state");
 const { createAgentRateLimit } = require("./agent-rate-limit");
 const { createAgentCost } = require("./agent-cost");
@@ -179,6 +180,18 @@ const createDeps = () => {
   // summariser tokens against the user's daily cap (every ~30 turns).
   const agentCost = createAgentCost({ dynamoClient, mediaTable });
   const agentMemory = createAgentMemory({
+    dynamoClient,
+    mediaTable,
+    queryBySkPrefix: mediaStore.queryBySkPrefix,
+    bedrockClient,
+    InvokeModelCommand,
+    promptHelperModelId,
+    agentCost,
+  });
+
+  // Story memory mirrors agent memory: rolling summary compaction with the
+  // summariser billed against the user's daily cap.
+  const storyMemory = createStoryMemory({
     dynamoClient,
     mediaTable,
     queryBySkPrefix: mediaStore.queryBySkPrefix,
@@ -309,6 +322,7 @@ const createDeps = () => {
     agentMsgPrefix,
     companionMemory,
     agentMemory,
+    storyMemory,
     agentState,
     agentRateLimit,
     agentCost,

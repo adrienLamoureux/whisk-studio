@@ -72,11 +72,14 @@ function createAgentMemory({
     const stateSk = buildAgentStateSk(modelId);
     const prefix = agentMsgPrefix(modelId);
 
+    // media-store's queryBySkPrefix takes an OBJECT — the old positional call
+    // silently returned [] and made server-side history a no-op in production.
+    // Newest-first + reverse gives the LAST N messages in chronological order.
     const [stateRecord, messages] = await Promise.all([
       dynamoClient
         .send(new GetCommand({ TableName: mediaTable, Key: { pk, sk: stateSk } }))
         .catch(() => ({ Item: null })),
-      queryBySkPrefix(pk, prefix, MAX_HISTORY_LOAD),
+      queryBySkPrefix({ pk, skPrefix: prefix, limit: MAX_HISTORY_LOAD, scanForward: false }),
     ]);
 
     if (!stateRecord.Item && (!messages || messages.length === 0)) {
@@ -86,12 +89,15 @@ function createAgentMemory({
     return {
       summary: stateRecord.Item?.summary || null,
       turnCount: stateRecord.Item?.turnCount || 0,
-      messages: (messages || []).map((m) => ({
-        role: m.role,
-        content: m.content,
-        toolCalls: m.toolCalls,
-        createdAt: m.createdAt,
-      })),
+      messages: (messages || [])
+        .slice()
+        .reverse()
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+          toolCalls: m.toolCalls,
+          createdAt: m.createdAt,
+        })),
     };
   }
 
@@ -185,8 +191,16 @@ function createAgentMemory({
     const prefix = agentMsgPrefix(modelId);
 
     try {
-      const oldMessages = await queryBySkPrefix(pk, prefix, COMPACT_WINDOW);
-      if (!oldMessages || oldMessages.length < COMPACT_WINDOW / 2) return;
+      // Oldest first, over-fetched by MAX_HISTORY_LOAD: only compact when the
+      // recent context window is guaranteed to survive the deletion.
+      const oldest = await queryBySkPrefix({
+        pk,
+        skPrefix: prefix,
+        limit: COMPACT_WINDOW + MAX_HISTORY_LOAD,
+        scanForward: true,
+      });
+      if (!oldest || oldest.length < COMPACT_WINDOW + MAX_HISTORY_LOAD) return;
+      const oldMessages = oldest.slice(0, COMPACT_WINDOW);
 
       const transcript = oldMessages
         .map((m) => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`)
@@ -250,7 +264,7 @@ function createAgentMemory({
     const prefix = agentMsgPrefix(modelId);
 
     try {
-      const allMessages = await queryBySkPrefix(pk, prefix, 200);
+      const allMessages = await queryBySkPrefix({ pk, skPrefix: prefix, limit: 200 });
       await Promise.all([
         ...(allMessages || []).map((item) =>
           dynamoClient

@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { generateNovaReelVideo, getNovaReelJobStatus } from "../../../services/bedrock";
 import { generateReplicateVideo, getReplicateVideoStatus } from "../../../services/replicate";
+import { useNotify } from "../../../components/sakura/NotificationStack";
+import createPoller, { formatElapsedLabel } from "../../../lib/polling/createPoller";
+import { loadJob, saveJob, clearJob } from "../../../lib/polling/jobStore";
+
+const VIDEO_BEDROCK_JOB_SLOT = "video-bedrock";
+const VIDEO_REPLICATE_JOB_SLOT = "video-replicate";
+const VIDEO_POLL_INTERVAL_MS = 5000;
+const VIDEO_POLL_MAX_ATTEMPTS = 240; // ~20 minutes
 
 const buildUnsupportedLoraMessage = ({
   modelKey = "",
@@ -53,6 +61,7 @@ export const useVideoGeneration = ({
   onSubmitted,
   onCompleted,
 }) => {
+  const notify = useNotify();
   const [videoProvider, setVideoProvider] = useState("replicate");
   const [videoModel, setVideoModel] = useState("wan-2.2-i2v-fast");
   const [videoGenerateAudio, setVideoGenerateAudio] = useState(true);
@@ -64,12 +73,16 @@ export const useVideoGeneration = ({
   const [replicatePredictionId, setReplicatePredictionId] = useState("");
   const [replicateJobStatus, setReplicateJobStatus] = useState("");
   const [replicateInputKey, setReplicateInputKey] = useState("");
+  const [replicateCharacterId, setReplicateCharacterId] = useState("");
   const [bedrockInputKey, setBedrockInputKey] = useState("");
+  const [videoJobNotice, setVideoJobNotice] = useState("");
   const onCompletedRef = useRef(onCompleted);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
     onCompletedRef.current = onCompleted;
-  }, [onCompleted]);
+    onErrorRef.current = onError;
+  }, [onCompleted, onError]);
 
   const isGenerating = generationStatus === "loading";
   const isVideoInProgress =
@@ -128,6 +141,14 @@ export const useVideoGeneration = ({
       videoModel === "kling-v2.6" ||
       videoModel === "seedance-1.5-pro");
 
+  // Costly Replicate models — the caller shows an in-modal confirmation
+  // before invoking handleGenerateVideo (replaces the old window.confirm).
+  const isExpensiveModelSelected =
+    videoProvider === "replicate" &&
+    (videoModel === "veo-3.1-fast" ||
+      videoModel === "kling-v2.6" ||
+      videoModel === "seedance-1.5-pro");
+
   useEffect(() => {
     const allowedModels = videoModelOptions.map((option) => option.key);
     if (!allowedModels.includes(videoModel)) {
@@ -176,19 +197,6 @@ export const useVideoGeneration = ({
 
     try {
       if (videoProvider === "replicate") {
-        if (
-          videoModel === "veo-3.1-fast" ||
-          videoModel === "kling-v2.6" ||
-          videoModel === "seedance-1.5-pro"
-        ) {
-          const confirmed = window.confirm(
-            "This Replicate model can be expensive to run. Do you want to continue?"
-          );
-          if (!confirmed) {
-            setGenerationStatus("idle");
-            return;
-          }
-        }
         if (!selectedImageUrl) {
           throw new Error("Selected image URL is missing.");
         }
@@ -208,8 +216,15 @@ export const useVideoGeneration = ({
           setReplicatePredictionId(data.predictionId);
           setReplicateJobStatus(data.status || "starting");
           setReplicateInputKey(resolvedInputKey);
+          setReplicateCharacterId(selectedLoraProfileId || "");
+          saveJob(VIDEO_REPLICATE_JOB_SLOT, {
+            predictionId: data.predictionId,
+            inputKey: resolvedInputKey,
+            characterId: selectedLoraProfileId || "",
+          });
         } else {
           setGenerationStatus("success");
+          notify?.("Video generation finished.", "success");
         }
         onSubmitted?.();
       } else {
@@ -220,54 +235,83 @@ export const useVideoGeneration = ({
           model: videoModel,
         });
         setGenerationStatus("success");
-        setInvocationArn(data?.response?.invocationArn || "");
+        const resolvedArn = data?.response?.invocationArn || "";
+        setInvocationArn(resolvedArn);
         const resolvedPrefix = data?.outputPrefix || derivePrefixFromS3Uri(data?.outputS3Uri || "");
         setOutputPrefix(resolvedPrefix);
         setBedrockInputKey(resolvedInputKey);
+        if (resolvedArn) {
+          saveJob(VIDEO_BEDROCK_JOB_SLOT, {
+            invocationArn: resolvedArn,
+            outputPrefix: resolvedPrefix,
+            inputKey: resolvedInputKey,
+          });
+        }
         onSubmitted?.();
       }
     } catch (error) {
       setGenerationStatus("error");
       onError?.(error?.message || "Video generation failed.");
+      notify?.(error?.message || "Video generation failed.", "error");
     }
   };
 
   useEffect(() => {
     if (!invocationArn || !apiBaseUrl) return undefined;
-    let timeoutId;
-    let isCancelled = false;
-
-    const pollStatus = async () => {
-      if (isCancelled) return;
-      try {
-        const data = await getNovaReelJobStatus(apiBaseUrl, {
-          invocationArn,
-          inputKey: bedrockInputKey || selectedImageKey || selectedSourceImageKey,
-          outputPrefix,
-        });
+    const poller = createPoller({
+      immediate: true,
+      intervalMs: VIDEO_POLL_INTERVAL_MS,
+      maxAttempts: VIDEO_POLL_MAX_ATTEMPTS,
+      maxConsecutiveErrors: 4,
+      task: async ({ elapsedMs }) => {
+        let data;
+        try {
+          data = await getNovaReelJobStatus(apiBaseUrl, {
+            invocationArn,
+            inputKey: bedrockInputKey || selectedImageKey || selectedSourceImageKey,
+            outputPrefix,
+          });
+        } catch (error) {
+          if (error?.status === 401) {
+            // Session expired — AuthExpiryNotice handles the messaging.
+            clearJob(VIDEO_BEDROCK_JOB_SLOT);
+            setVideoJobNotice("");
+            return true;
+          }
+          throw error;
+        }
         const statusValue = data?.status || "";
         setJobStatus(statusValue);
         if (statusValue === "Completed") {
+          clearJob(VIDEO_BEDROCK_JOB_SLOT);
+          setVideoJobNotice("");
+          notify?.("Video generation finished.", "success");
           onCompletedRef.current?.();
-          return;
+          return true;
         }
         if (statusValue === "Failed") {
-          return;
+          clearJob(VIDEO_BEDROCK_JOB_SLOT);
+          setVideoJobNotice("");
+          onErrorRef.current?.("Video generation failed.");
+          notify?.("Video generation failed.", "error");
+          return true;
         }
-      } catch (error) {
-        console.error(error);
-      }
-      timeoutId = setTimeout(pollStatus, 5000);
-    };
-
-    pollStatus();
-
-    return () => {
-      isCancelled = true;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
+        setVideoJobNotice(`Video is still processing... (${formatElapsedLabel(elapsedMs)})`);
+        return false;
+      },
+      onExhausted: (reason) => {
+        clearJob(VIDEO_BEDROCK_JOB_SLOT);
+        setVideoJobNotice("");
+        const message =
+          reason === "attempts"
+            ? "Video generation is taking longer than expected — check the Videos tab later."
+            : "Lost contact while checking the video job — please try again.";
+        onErrorRef.current?.(message);
+        notify?.(message, "error");
+      },
+    });
+    poller.start();
+    return () => poller.stop();
   }, [
     apiBaseUrl,
     invocationArn,
@@ -275,53 +319,97 @@ export const useVideoGeneration = ({
     bedrockInputKey,
     selectedImageKey,
     selectedSourceImageKey,
+    notify,
   ]);
 
   useEffect(() => {
     if (!replicatePredictionId || !apiBaseUrl) return undefined;
-    let timeoutId;
-    let isCancelled = false;
-
-    const pollReplicateStatus = async () => {
-      if (isCancelled) return;
-      try {
-        const data = await getReplicateVideoStatus(apiBaseUrl, {
-          predictionId: replicatePredictionId,
-          inputKey: replicateInputKey || selectedImageKey,
-          characterId: selectedLoraProfileId || undefined,
-        });
+    const poller = createPoller({
+      immediate: true,
+      intervalMs: VIDEO_POLL_INTERVAL_MS,
+      maxAttempts: VIDEO_POLL_MAX_ATTEMPTS,
+      maxConsecutiveErrors: 4,
+      task: async ({ elapsedMs }) => {
+        let data;
+        try {
+          data = await getReplicateVideoStatus(apiBaseUrl, {
+            predictionId: replicatePredictionId,
+            inputKey: replicateInputKey || selectedImageKey,
+            characterId: replicateCharacterId || undefined,
+          });
+        } catch (error) {
+          if (error?.status === 401) {
+            clearJob(VIDEO_REPLICATE_JOB_SLOT);
+            setVideoJobNotice("");
+            return true;
+          }
+          throw error;
+        }
         const statusValue = data?.status || "";
         setReplicateJobStatus(statusValue);
         if (statusValue === "succeeded") {
+          clearJob(VIDEO_REPLICATE_JOB_SLOT);
+          setVideoJobNotice("");
           setGenerationStatus("success");
+          notify?.("Video generation finished.", "success");
           onCompletedRef.current?.();
-          return;
+          return true;
         }
         if (statusValue === "failed" || statusValue === "canceled") {
+          clearJob(VIDEO_REPLICATE_JOB_SLOT);
+          setVideoJobNotice("");
           setGenerationStatus("error");
-          return;
+          onErrorRef.current?.("Video generation failed.");
+          notify?.("Video generation failed.", "error");
+          return true;
         }
-      } catch (error) {
-        console.error(error);
-      }
-      timeoutId = setTimeout(pollReplicateStatus, 5000);
-    };
-
-    pollReplicateStatus();
-
-    return () => {
-      isCancelled = true;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
+        setVideoJobNotice(`Video is still processing... (${formatElapsedLabel(elapsedMs)})`);
+        return false;
+      },
+      onExhausted: (reason) => {
+        clearJob(VIDEO_REPLICATE_JOB_SLOT);
+        setVideoJobNotice("");
+        const message =
+          reason === "attempts"
+            ? "Video generation is taking longer than expected — check the Videos tab later."
+            : "Lost contact while checking the video job — please try again.";
+        setGenerationStatus("error");
+        onErrorRef.current?.(message);
+        notify?.(message, "error");
+      },
+    });
+    poller.start();
+    return () => poller.stop();
   }, [
     apiBaseUrl,
     replicatePredictionId,
     replicateInputKey,
+    replicateCharacterId,
     selectedImageKey,
-    selectedLoraProfileId,
+    notify,
   ]);
+
+  // Resume video jobs left in flight by navigation — restoring the stored
+  // identifiers re-arms the poll effects above.
+  useEffect(() => {
+    if (!apiBaseUrl) return;
+    const bedrockJob = loadJob(VIDEO_BEDROCK_JOB_SLOT);
+    if (bedrockJob?.invocationArn && !invocationArn) {
+      setJobStatus("InProgress");
+      setVideoJobNotice("Resuming video job check...");
+      setBedrockInputKey(bedrockJob.inputKey || "");
+      setOutputPrefix(bedrockJob.outputPrefix || "");
+      setInvocationArn(bedrockJob.invocationArn);
+    }
+    const replicateJob = loadJob(VIDEO_REPLICATE_JOB_SLOT);
+    if (replicateJob?.predictionId && !replicatePredictionId) {
+      setReplicateJobStatus("processing");
+      setVideoJobNotice("Resuming video job check...");
+      setReplicateInputKey(replicateJob.inputKey || "");
+      setReplicateCharacterId(replicateJob.characterId || "");
+      setReplicatePredictionId(replicateJob.predictionId);
+    }
+  }, [apiBaseUrl, invocationArn, replicatePredictionId]);
 
   return {
     videoProvider,
@@ -333,8 +421,10 @@ export const useVideoGeneration = ({
     videoGenerateAudio,
     setVideoGenerateAudio,
     isReplicateAudioOption,
+    isExpensiveModelSelected,
     isGenerating,
     isVideoInProgress,
+    videoJobNotice,
     prompt,
     setPrompt,
     handleGenerateVideo,

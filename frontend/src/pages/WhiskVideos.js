@@ -41,7 +41,9 @@ export default function WhiskVideos() {
 
   return (
     <div>
-      {error && <p style={{ fontSize: 12, color: "#ef4444", marginBottom: 12 }}>{error}</p>}
+      {error && (
+        <p style={{ fontSize: 12, color: "var(--skr-accent-danger)", marginBottom: 12 }}>{error}</p>
+      )}
       {shareNotice && (
         <p style={{ fontSize: 12, color: "var(--skr-accent)", marginBottom: 12 }}>{shareNotice}</p>
       )}
@@ -137,7 +139,7 @@ export default function WhiskVideos() {
                       onClick={() => removeVideo(video)}
                       aria-label="Delete video"
                       title="Delete video"
-                      style={{ color: "#ef4444" }}
+                      style={{ color: "var(--skr-accent-danger)" }}
                     >
                       ✕
                     </button>

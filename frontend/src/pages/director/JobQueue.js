@@ -115,7 +115,7 @@ function JobRow({ job, apiBaseUrl, onRefresh }) {
           {canCancel && (
             <button
               className="skr-btn-secondary"
-              style={{ fontSize: 11, padding: "3px 10px", color: "#ef4444" }}
+              style={{ fontSize: 11, padding: "3px 10px", color: "var(--skr-accent-danger)" }}
               onClick={handleCancel}
               disabled={actioning === "cancel"}
             >
@@ -125,7 +125,7 @@ function JobRow({ job, apiBaseUrl, onRefresh }) {
         </div>
       </div>
       {job.status === "failed" && job.errorMessage && (
-        <p style={{ fontSize: 11, color: "#ef4444", margin: 0, paddingLeft: 2 }}>
+        <p style={{ fontSize: 11, color: "var(--skr-accent-danger)", margin: 0, paddingLeft: 2 }}>
           {job.errorMessage}
         </p>
       )}

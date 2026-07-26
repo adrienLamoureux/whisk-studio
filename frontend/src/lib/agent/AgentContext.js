@@ -36,7 +36,7 @@ import useIntentConfirm from "./useIntentConfirm";
 import { AGENT_TURN } from "../../constants/api-routes";
 import { useCompanion, CompanionActions } from "../companion/CompanionContext";
 import { useMode } from "../mode/ModeContext";
-import { friendlyAgentError, isAgentDisabledError } from "./errorMessages";
+import { friendlyAgentError, friendlyAgentErrorFor, isAgentDisabledError } from "./errorMessages";
 import { parseSlashCommand, dispatchSlashCommand } from "./slashCommands";
 import useSpeech from "./useSpeech";
 
@@ -334,7 +334,9 @@ export function AgentProvider({ children }) {
           maybeSpeak(text);
           window.setTimeout(() => setMode("dashboard"), 1200);
         } else {
-          const text = friendlyAgentError(err?.message, "tool_dispatch_failed");
+          // Structured-code aware; appends the backend's retry wait for
+          // rate-limit / daily-cap errors instead of discarding it.
+          const text = friendlyAgentErrorFor(err, "tool_dispatch_failed");
           append({
             kind: "agent",
             payload: { text, emotion: "sad", error: true },

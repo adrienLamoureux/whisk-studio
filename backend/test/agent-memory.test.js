@@ -70,9 +70,10 @@ test("loadMemory returns merged shape when state record exists", async () => {
   const dynamoClient = makeStubClient({
     getItem: { summary: "they like cats", turnCount: 5 },
   });
+  // Newest-first, as the scanForward:false query returns.
   const queryBySkPrefix = async () => [
-    { role: "user", content: "draw a cat", createdAt: 1 },
     { role: "assistant", content: "here's a cat", createdAt: 2 },
+    { role: "user", content: "draw a cat", createdAt: 1 },
   ];
   const mem = createAgentMemory({
     dynamoClient,
@@ -160,7 +161,9 @@ test("SUMMARY_THRESHOLD is exposed and is a positive integer", () => {
 test("compactMemory bills summariser tokens to agentCost when wired", async () => {
   // The summariser runs every ~30 turns. Without billing its tokens against
   // the daily cap, a user racks up untracked spend at every compaction.
-  const messages = Array.from({ length: 16 }, (_, i) => ({
+  // 36 = COMPACT_WINDOW (20) + MAX_HISTORY_LOAD (16): enough that compaction
+  // proceeds while the recent context window survives.
+  const messages = Array.from({ length: 36 }, (_, i) => ({
     sk: `AGENT#default#MSG#${String(Date.now() + i).padStart(13, "0")}`,
     role: i % 2 === 0 ? "user" : "assistant",
     content: `turn ${i}`,
@@ -200,7 +203,7 @@ test("compactMemory bills summariser tokens to agentCost when wired", async () =
 });
 
 test("compactMemory skips token billing when agentCost is not wired", async () => {
-  const messages = Array.from({ length: 16 }, (_, i) => ({
+  const messages = Array.from({ length: 36 }, (_, i) => ({
     sk: `AGENT#default#MSG#${String(Date.now() + i).padStart(13, "0")}`,
     role: i % 2 === 0 ? "user" : "assistant",
     content: `turn ${i}`,
@@ -222,6 +225,77 @@ test("compactMemory skips token billing when agentCost is not wired", async () =
     // agentCost intentionally omitted — compaction must still succeed
   });
   await mem.compactMemory("u1", "default"); // must not throw
+});
+
+test("loadMemory queries with the media-store OBJECT signature and returns chronological order", async () => {
+  const seen = [];
+  const queryBySkPrefix = async (args) => {
+    seen.push(args);
+    // Newest-first, as scanForward:false would return.
+    return [
+      { role: "assistant", content: "newest", createdAt: 3 },
+      { role: "user", content: "middle", createdAt: 2 },
+      { role: "user", content: "oldest", createdAt: 1 },
+    ];
+  };
+  const mem = createAgentMemory({
+    dynamoClient: makeStubClient({ getItem: { turnCount: 3 } }),
+    mediaTable: "test",
+    queryBySkPrefix,
+    bedrockClient: makeBedrock(""),
+    InvokeModelCommand: FakeCommand,
+    promptHelperModelId: "model",
+  });
+  const result = await mem.loadMemory("u1", "default");
+
+  assert.equal(seen.length, 1);
+  assert.equal(typeof seen[0], "object", "must use the object signature, not positional args");
+  assert.equal(seen[0].pk, "USER#u1");
+  assert.equal(seen[0].scanForward, false);
+  assert.deepEqual(
+    result.messages.map((m) => m.content),
+    ["oldest", "middle", "newest"],
+    "messages must come back in chronological order"
+  );
+});
+
+test("compactMemory deletes only the oldest window and no-ops when the tail is thin", async () => {
+  const messages = Array.from({ length: 36 }, (_, i) => ({
+    sk: `AGENT#default#MSG#${String(1000 + i).padStart(13, "0")}`,
+    role: i % 2 === 0 ? "user" : "assistant",
+    content: `turn ${i}`,
+  }));
+  const client = makeStubClient();
+  const mem = createAgentMemory({
+    dynamoClient: client,
+    mediaTable: "test",
+    queryBySkPrefix: async ({ scanForward }) => {
+      assert.equal(scanForward, true, "compaction must read oldest-first");
+      return messages;
+    },
+    bedrockClient: makeBedrock("summary"),
+    InvokeModelCommand: FakeCommand,
+    promptHelperModelId: "model",
+  });
+  await mem.compactMemory("u1", "default");
+  const deletes = client.sent.filter((c) => c?.constructor?.name === "DeleteCommand");
+  assert.equal(deletes.length, 20, "only COMPACT_WINDOW oldest messages are deleted");
+  const deletedSks = new Set(deletes.map((c) => c.input.Key.sk));
+  messages.slice(20).forEach((m) => assert.ok(!deletedSks.has(m.sk), "recent tail must survive"));
+
+  // Thin history (fewer than window + history-load) must not be compacted.
+  const thinClient = makeStubClient();
+  const thinMem = createAgentMemory({
+    dynamoClient: thinClient,
+    mediaTable: "test",
+    queryBySkPrefix: async () => messages.slice(0, 24),
+    bedrockClient: makeBedrock("summary"),
+    InvokeModelCommand: FakeCommand,
+    promptHelperModelId: "model",
+  });
+  await thinMem.compactMemory("u1", "default");
+  const thinDeletes = thinClient.sent.filter((c) => c?.constructor?.name === "DeleteCommand");
+  assert.equal(thinDeletes.length, 0);
 });
 
 // Suppress unused-class warnings — they exist to make instanceof checks possible

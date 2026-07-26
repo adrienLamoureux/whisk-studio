@@ -146,7 +146,9 @@ export default function PromptHelperPanel({ promptHelperProps, collapsed, onTogg
             </button>
           </div>
           {status === "error" && (
-            <p style={{ fontSize: 11, color: "#ef4444", margin: 0 }}>Helper failed. Try again.</p>
+            <p style={{ fontSize: 11, color: "var(--skr-accent-danger)", margin: 0 }}>
+              Helper failed. Try again.
+            </p>
           )}
         </div>
       )}

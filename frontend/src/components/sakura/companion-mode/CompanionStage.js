@@ -36,6 +36,7 @@ import { buildApiUrl } from "../../../services/apiClient";
 import { getDefaultModel, getModelById } from "../../../lib/live2d/model-registry";
 import { useMode } from "../../../lib/mode/ModeContext";
 import { useAgent } from "../../../lib/agent/AgentContext";
+import { Interaction } from "../../../lib/live2d/character-interactions";
 import { turnsToMarkdown, downloadMarkdown } from "../../../lib/agent/exportTurns";
 import NAV_ITEMS from "../../../lib/nav/navItems";
 import CompanionCanvas from "../companion/CompanionCanvas";
@@ -106,6 +107,38 @@ export default function CompanionStage() {
   const handleEngineReady = useCallback((engine) => {
     engineRef.current = engine;
   }, []);
+
+  // Drive the Live2D character from the agent turn stream: thinking pose
+  // while waiting, lip-sync + the model-emitted emotion on replies, and
+  // task start/done/fail motions on tool results. Guarded per turn id so
+  // each turn triggers exactly once.
+  const lastReactedTurnIdRef = useRef(null);
+  useEffect(() => {
+    const last = turns[turns.length - 1];
+    const engine = engineRef.current;
+    if (!last || !engine || lastReactedTurnIdRef.current === last.id) return;
+    lastReactedTurnIdRef.current = last.id;
+
+    if (last.kind === "thinking") {
+      engine.interact(Interaction.THINKING);
+      return;
+    }
+    if (last.kind === "agent") {
+      const emotion = last.payload?.emotion;
+      if (emotion && emotion !== "neutral") engine.setEmotion(emotion, 3000);
+      const textLength = String(last.payload?.text || "").length;
+      // ~30ms per character approximates a spoken reply; capped so long
+      // replies don't leave the mouth flapping forever.
+      if (textLength) engine.startLipSync(Math.min(textLength * 30 + 400, 8000));
+      return;
+    }
+    if (last.kind === "tool-result") {
+      const status = last.payload?.status;
+      if (status === "failed") engine.interact(Interaction.TASK_FAIL);
+      else if (status === "succeeded") engine.interact(Interaction.TASK_DONE);
+      else engine.interact(Interaction.TASK_START);
+    }
+  }, [turns]);
 
   // If the user signed out while in companion mode, kick them back to the
   // dashboard rather than leaving them stranded with no shell.

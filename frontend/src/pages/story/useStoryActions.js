@@ -4,6 +4,7 @@ import {
   generateStoryIllustration,
   sendStoryMessage,
 } from "../../services/story";
+import { useNotify } from "../../components/sakura/NotificationStack";
 
 /**
  * Encapsulates the three primary async actions for the Story page:
@@ -31,6 +32,7 @@ export default function useStoryActions({
   setSending,
   activeSessionId,
 }) {
+  const notify = useNotify();
   const autoIllustrateOpening = useCallback(
     async (sessionId, knownSceneId = null) => {
       if (!sessionId || !apiBaseUrl) return;
@@ -100,6 +102,7 @@ export default function useStoryActions({
       }
     } catch (e) {
       setError(e?.message || "Failed to create session.");
+      notify?.(e?.message || "Failed to create session.", "error");
     } finally {
       setCreatingSession(false);
     }
@@ -116,6 +119,7 @@ export default function useStoryActions({
     setScenes,
     setMessages,
     autoIllustrateOpening,
+    notify,
   ]);
 
   const sendMessage = useCallback(async () => {
@@ -131,11 +135,18 @@ export default function useStoryActions({
         data?.assistant?.content || data?.reply || data?.message || data?.content || "…";
       const scene = data?.scene || null;
       if (scene?.sceneId) mergeScenes([scene]);
+      if (data?.degraded) {
+        notify?.(
+          "The story stumbled on that turn — try Regenerate if the reply looks off.",
+          "error"
+        );
+      }
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: reply, sceneId: scene?.sceneId || null },
       ]);
-    } catch {
+    } catch (e) {
+      notify?.(e?.message || "The story reply failed — please try again.", "error");
       setMessages((prev) => [
         ...prev,
         {
@@ -156,7 +167,39 @@ export default function useStoryActions({
     setSending,
     setError,
     mergeScenes,
+    notify,
   ]);
 
-  return { handleCreateSession, sendMessage };
+  // Re-answers the last user turn: the backend deletes the previous assistant
+  // reply, so the last assistant bubble is replaced in place here too.
+  const regenerateLastReply = useCallback(async () => {
+    if (!activeSessionId) return;
+    setSending(true);
+    setError("");
+    try {
+      const data = await sendStoryMessage(apiBaseUrl, activeSessionId, { regenerate: true });
+      const reply = data?.assistant?.content || "…";
+      const scene = data?.scene || null;
+      if (scene?.sceneId) mergeScenes([scene]);
+      if (data?.degraded) {
+        notify?.("The story stumbled again — you may want to rephrase your last message.", "error");
+      }
+      setMessages((prev) => {
+        const updated = [...prev];
+        for (let i = updated.length - 1; i >= 0; i -= 1) {
+          if (updated[i].role === "assistant") {
+            updated[i] = { role: "assistant", text: reply, sceneId: scene?.sceneId || null };
+            return updated;
+          }
+        }
+        return [...updated, { role: "assistant", text: reply, sceneId: scene?.sceneId || null }];
+      });
+    } catch (e) {
+      notify?.(e?.message || "Could not regenerate the reply.", "error");
+    } finally {
+      setSending(false);
+    }
+  }, [apiBaseUrl, activeSessionId, setMessages, setSending, setError, mergeScenes, notify]);
+
+  return { handleCreateSession, sendMessage, regenerateLastReply };
 }

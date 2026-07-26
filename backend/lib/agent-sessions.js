@@ -58,7 +58,13 @@ function createAgentSessions({ dynamoClient, mediaTable, queryBySkPrefix }) {
   async function list(userId) {
     if (!userId || !queryBySkPrefix) return [];
     try {
-      const items = await queryBySkPrefix(buildMediaPk(userId), agentSessionPrefix(), 200);
+      // Object signature (media-store) — the positional form silently
+      // returned [] and hid every stored session from the picker.
+      const items = await queryBySkPrefix({
+        pk: buildMediaPk(userId),
+        skPrefix: agentSessionPrefix(),
+        limit: 200,
+      });
       return (items || [])
         .map((i) => ({
           sessionId: String(i.sk || "").replace(agentSessionPrefix(), ""),

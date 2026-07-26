@@ -75,6 +75,11 @@ const createMockDeps = (overrides = {}) => {
     getMemoryStatus: async () => ({ hasMemory: false }),
   };
 
+  const storyMemory = {
+    SUMMARY_THRESHOLD: 30,
+    compactIfNeeded: async () => {},
+  };
+
   const agentState = {
     load: async () => null,
     patch: async () => {},
@@ -310,6 +315,7 @@ const createMockDeps = (overrides = {}) => {
     // Stores
     companionMemory,
     agentMemory,
+    storyMemory,
     agentState,
     agentRateLimit,
     agentCost,

@@ -24,8 +24,9 @@ jest.mock("../../../services/s3", () => ({
   requestImageUploadUrl: jest.fn(),
 }));
 
-import { generateReplicateImage } from "../../../services/replicate";
+import { generateReplicateImage, getReplicateImageStatus } from "../../../services/replicate";
 import { generateBedrockImage } from "../../../services/bedrock";
+import { saveJob, loadJob } from "../../../lib/polling/jobStore";
 
 // Minimal default props for the hook
 function makeProps(overrides = {}) {
@@ -226,6 +227,89 @@ describe("useImageGeneration — validation guards", () => {
     expect(props.onError).toHaveBeenCalledWith(
       "API base URL is missing. Set it in config.json or .env."
     );
+  });
+});
+
+describe("useImageGeneration — job persistence & resume", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    window.sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    window.sessionStorage.clear();
+    jest.useRealTimers();
+  });
+
+  it("persists a job descriptor when async generation starts polling", async () => {
+    generateReplicateImage.mockResolvedValueOnce({
+      predictionId: "pred-1",
+      status: "processing",
+    });
+
+    const props = makeProps();
+    const { result } = renderHook(() => useImageGeneration(props));
+
+    await act(async () => {
+      await result.current.handleGenerateImage();
+    });
+
+    expect(result.current.imageGenerationStatus).toBe("loading");
+    expect(loadJob("image")).toMatchObject({
+      provider: "replicate",
+      params: expect.objectContaining({ predictionId: "pred-1" }),
+    });
+  });
+
+  it("resumes a persisted in-flight job on mount and completes it", async () => {
+    jest.useFakeTimers();
+    saveJob("image", {
+      provider: "replicate",
+      params: {
+        predictionId: "pred-9",
+        batchId: "b1",
+        imageName: "n",
+        prompt: "p",
+        negativePrompt: "",
+      },
+    });
+    getReplicateImageStatus.mockResolvedValue({ status: "succeeded", notice: "" });
+
+    const props = makeProps();
+    const { result } = renderHook(() => useImageGeneration(props));
+    expect(result.current.imageGenerationStatus).toBe("loading");
+
+    await act(async () => {
+      jest.advanceTimersByTime(2500);
+    });
+
+    expect(getReplicateImageStatus).toHaveBeenCalledWith(
+      "https://api.example.com",
+      expect.objectContaining({ predictionId: "pred-9" })
+    );
+    expect(result.current.imageGenerationStatus).toBe("success");
+    expect(props.onGenerationComplete).toHaveBeenCalled();
+    expect(loadJob("image")).toBeNull();
+  });
+
+  it("clears the job and errors out when the poll reports failure", async () => {
+    jest.useFakeTimers();
+    saveJob("image", {
+      provider: "replicate",
+      params: { predictionId: "pred-9" },
+    });
+    getReplicateImageStatus.mockResolvedValue({ status: "failed", error: "GPU exploded" });
+
+    const props = makeProps();
+    const { result } = renderHook(() => useImageGeneration(props));
+
+    await act(async () => {
+      jest.advanceTimersByTime(2500);
+    });
+
+    expect(result.current.imageGenerationStatus).toBe("error");
+    expect(props.onError).toHaveBeenCalledWith("GPU exploded");
+    expect(loadJob("image")).toBeNull();
   });
 });
 

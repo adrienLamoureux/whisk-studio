@@ -156,7 +156,7 @@ function SolarisImageWall({
                 <img
                   className="skr-image-tile-main"
                   src={image.url}
-                  alt={image.key || "Generated image"}
+                  alt={image.prompt || image.key || "Generated image"}
                 />
               </span>
               <div className="skr-image-tile-overlay" />

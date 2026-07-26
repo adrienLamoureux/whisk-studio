@@ -161,9 +161,10 @@ const createStorySeedStore = ({ dynamoClient, mediaTable, queryBySkPrefix }) => 
       const existingMap = new Map(existing.map((item) => [item.id || "", item]));
       const updates = storyPresets.filter((preset) => {
         const current = existingMap.get(preset.id);
-        return (
-          current && (!current.protagonistId || current.protagonistId !== preset.protagonistId)
-        );
+        // Seed presets missing from an already-seeded table (newly activated
+        // ones) and repair records whose protagonist wiring changed.
+        if (!current) return true;
+        return !current.protagonistId || current.protagonistId !== preset.protagonistId;
       });
       if (updates.length) {
         await Promise.all(

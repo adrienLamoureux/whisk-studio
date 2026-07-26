@@ -5,14 +5,18 @@ import {
   startStorySceneMusic,
   getStorySceneMusicStatus,
 } from "../../services/story";
+import createPoller from "../../lib/polling/createPoller";
+
+const SCENE_POLL_INTERVAL_MS = 5000;
+const SCENE_POLL_MAX_ATTEMPTS = 120; // ~10 minutes
 
 /**
  * Hook encapsulating animation + music trigger/poll for story scenes.
  */
 export default function useSceneMedia(apiBaseUrl) {
   const [mediaMap, setMediaMap] = useState({});
-  const animPollTimers = useRef({});
-  const musicPollTimers = useRef({});
+  const animPollers = useRef({});
+  const musicPollers = useRef({});
 
   // --- helpers ---
   const updateScene = useCallback((sceneId, patch) => {
@@ -23,24 +27,24 @@ export default function useSceneMedia(apiBaseUrl) {
   }, []);
 
   const clearAnimPoll = useCallback((sceneId) => {
-    if (animPollTimers.current[sceneId]) {
-      clearTimeout(animPollTimers.current[sceneId]);
-      delete animPollTimers.current[sceneId];
+    if (animPollers.current[sceneId]) {
+      animPollers.current[sceneId].stop();
+      delete animPollers.current[sceneId];
     }
   }, []);
 
   const clearMusicPoll = useCallback((sceneId) => {
-    if (musicPollTimers.current[sceneId]) {
-      clearTimeout(musicPollTimers.current[sceneId]);
-      delete musicPollTimers.current[sceneId];
+    if (musicPollers.current[sceneId]) {
+      musicPollers.current[sceneId].stop();
+      delete musicPollers.current[sceneId];
     }
   }, []);
 
   const clearAllPolls = useCallback(() => {
-    Object.keys(animPollTimers.current).forEach((id) => clearTimeout(animPollTimers.current[id]));
-    Object.keys(musicPollTimers.current).forEach((id) => clearTimeout(musicPollTimers.current[id]));
-    animPollTimers.current = {};
-    musicPollTimers.current = {};
+    Object.keys(animPollers.current).forEach((id) => animPollers.current[id].stop());
+    Object.keys(musicPollers.current).forEach((id) => musicPollers.current[id].stop());
+    animPollers.current = {};
+    musicPollers.current = {};
     setMediaMap({});
   }, []);
 
@@ -68,21 +72,32 @@ export default function useSceneMedia(apiBaseUrl) {
 
       const finish = () => clearAnimPoll(sceneId);
 
-      const poll = async (predictionId) => {
-        try {
-          const statusData = await getStorySceneAnimationStatus(apiBaseUrl, sessionId, sceneId, {
-            predictionId,
-          });
-          applyData(statusData);
-          const st = statusData?.status || "";
-          if (st === "succeeded" || st === "failed" || st === "canceled") {
+      // Bounded retry: transient status-check failures are tolerated up to the
+      // poller's error cap instead of killing the poll on the first hiccup.
+      const startPolling = (predictionId) => {
+        const poller = createPoller({
+          intervalMs: SCENE_POLL_INTERVAL_MS,
+          maxAttempts: SCENE_POLL_MAX_ATTEMPTS,
+          maxConsecutiveErrors: 3,
+          task: async () => {
+            const statusData = await getStorySceneAnimationStatus(apiBaseUrl, sessionId, sceneId, {
+              predictionId,
+            });
+            applyData(statusData);
+            const st = statusData?.status || "";
+            if (st === "succeeded" || st === "failed" || st === "canceled") {
+              finish();
+              return true;
+            }
+            return false;
+          },
+          onExhausted: () => {
+            updateScene(sceneId, { videoStatus: "failed" });
             finish();
-            return;
-          }
-          animPollTimers.current[sceneId] = setTimeout(() => poll(predictionId), 5000);
-        } catch {
-          finish();
-        }
+          },
+        });
+        animPollers.current[sceneId] = poller;
+        poller.start();
       };
 
       try {
@@ -99,7 +114,7 @@ export default function useSceneMedia(apiBaseUrl) {
           finish();
           return;
         }
-        animPollTimers.current[sceneId] = setTimeout(() => poll(data.predictionId), 5000);
+        startPolling(data.predictionId);
       } catch {
         finish();
         updateScene(sceneId, { videoStatus: "failed" });
@@ -131,21 +146,30 @@ export default function useSceneMedia(apiBaseUrl) {
 
       const finish = () => clearMusicPoll(sceneId);
 
-      const poll = async (predictionId) => {
-        try {
-          const statusData = await getStorySceneMusicStatus(apiBaseUrl, sessionId, sceneId, {
-            predictionId,
-          });
-          applyData(statusData);
-          const st = statusData?.status || "";
-          if (st === "succeeded" || st === "failed" || st === "canceled") {
+      const startPolling = (predictionId) => {
+        const poller = createPoller({
+          intervalMs: SCENE_POLL_INTERVAL_MS,
+          maxAttempts: SCENE_POLL_MAX_ATTEMPTS,
+          maxConsecutiveErrors: 3,
+          task: async () => {
+            const statusData = await getStorySceneMusicStatus(apiBaseUrl, sessionId, sceneId, {
+              predictionId,
+            });
+            applyData(statusData);
+            const st = statusData?.status || "";
+            if (st === "succeeded" || st === "failed" || st === "canceled") {
+              finish();
+              return true;
+            }
+            return false;
+          },
+          onExhausted: () => {
+            updateScene(sceneId, { musicStatus: "failed" });
             finish();
-            return;
-          }
-          musicPollTimers.current[sceneId] = setTimeout(() => poll(predictionId), 5000);
-        } catch {
-          finish();
-        }
+          },
+        });
+        musicPollers.current[sceneId] = poller;
+        poller.start();
       };
 
       try {
@@ -160,7 +184,7 @@ export default function useSceneMedia(apiBaseUrl) {
           finish();
           return;
         }
-        musicPollTimers.current[sceneId] = setTimeout(() => poll(data.predictionId), 5000);
+        startPolling(data.predictionId);
       } catch {
         finish();
         updateScene(sceneId, { musicStatus: "failed" });

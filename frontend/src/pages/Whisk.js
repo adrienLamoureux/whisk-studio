@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import SolarisImageWall from "../components/shared/SolarisImageWall";
 import Modal from "../components/shared/Modal";
+import Lightbox from "../components/shared/Lightbox";
 import { useWhiskImages } from "./whisk/hooks/useWhiskImages";
 import { useImageStudio } from "./whisk/hooks/useImageStudio";
 import { useVideoGeneration } from "./whisk/hooks/useVideoGeneration";
@@ -117,8 +118,10 @@ export default function Whisk(props) {
     videoGenerateAudio,
     setVideoGenerateAudio,
     isReplicateAudioOption,
+    isExpensiveModelSelected,
     isGenerating: isGeneratingVideo,
     isVideoInProgress,
+    videoJobNotice,
     prompt: videoPrompt,
     setPrompt: setVideoPrompt,
     handleGenerateVideo,
@@ -256,7 +259,9 @@ export default function Whisk(props) {
             onValue={onImageNegativePromptChange}
             label="negative"
           />
-          {error && <span style={{ fontSize: 12, color: "#ef4444" }}>{error}</span>}
+          {error && (
+            <span style={{ fontSize: 12, color: "var(--skr-accent-danger)" }}>{error}</span>
+          )}
         </div>
       </div>
 
@@ -275,18 +280,7 @@ export default function Whisk(props) {
           canLoadMore={false}
           totalCount={images.length}
         />
-        {lightboxImage && (
-          <div className="skr-lightbox" onClick={() => setLightboxImage(null)}>
-            <button className="skr-lightbox-close" onClick={() => setLightboxImage(null)}>
-              ✕
-            </button>
-            <img
-              src={lightboxImage.url}
-              alt={lightboxImage.prompt || ""}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        )}
+        <Lightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
         {promptPreviewImage && (
           <Modal variant="panel" title="Prompt" onClose={() => setPromptPreviewImage(null)}>
             <p style={{ fontSize: 13, color: "var(--skr-text-secondary)", lineHeight: 1.6 }}>
@@ -402,6 +396,8 @@ export default function Whisk(props) {
           handleGenerateVideo={handleGenerateVideo}
           isGeneratingVideo={isGeneratingVideo}
           isVideoInProgress={isVideoInProgress}
+          videoJobNotice={videoJobNotice}
+          isExpensiveModelSelected={isExpensiveModelSelected}
         />
       )}
     </div>

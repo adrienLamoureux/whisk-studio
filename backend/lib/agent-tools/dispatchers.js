@@ -86,7 +86,11 @@ const dispatchContinueStory = async ({ args, deps, userId }) => {
 
   if (!sessionId && deps.queryBySkPrefix && deps.buildMediaPk && userId) {
     try {
-      const sessions = await deps.queryBySkPrefix(deps.buildMediaPk(userId), "SESSION#", 16);
+      const sessions = await deps.queryBySkPrefix({
+        pk: deps.buildMediaPk(userId),
+        skPrefix: "SESSION#",
+        limit: 16,
+      });
       const sessionRecords = (sessions || []).filter(
         (s) => s.sk?.indexOf("#MSG#") === -1 && s.sk?.indexOf("#SCENE#") === -1
       );
@@ -211,7 +215,11 @@ const dispatchGenerateMusic = async ({ args, deps, userId }) => {
 
   if ((!sessionId || !sceneId) && deps.queryBySkPrefix && deps.buildMediaPk) {
     try {
-      const sessions = await deps.queryBySkPrefix(deps.buildMediaPk(userId), "SESSION#", 32);
+      const sessions = await deps.queryBySkPrefix({
+        pk: deps.buildMediaPk(userId),
+        skPrefix: "SESSION#",
+        limit: 32,
+      });
       const sessionRecords = (sessions || []).filter(
         (s) =>
           s.sk?.indexOf("#MSG#") === -1 &&

@@ -226,7 +226,11 @@ export default function GeneratorSidebar({
             </p>
           )}
 
-          {error && <p style={{ fontSize: 12, color: "#ef4444", margin: "0 16px" }}>{error}</p>}
+          {error && (
+            <p style={{ fontSize: 12, color: "var(--skr-accent-danger)", margin: "0 16px" }}>
+              {error}
+            </p>
+          )}
 
           {/* Full options link */}
           <div style={{ padding: "0 12px 4px" }}>

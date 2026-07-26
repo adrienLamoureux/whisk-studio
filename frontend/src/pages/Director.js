@@ -104,7 +104,7 @@ export default function Director() {
             borderRadius: 8,
             marginBottom: 16,
             fontSize: 13,
-            color: "#ef4444",
+            color: "var(--skr-accent-danger)",
           }}
         >
           {loadError}

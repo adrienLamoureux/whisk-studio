@@ -6,7 +6,14 @@ import { generateHuggingFaceImage } from "../../../services/huggingface";
 import { createVideoReadyImage } from "../../../services/images";
 import { putFileToUrl, requestImageUploadUrl } from "../../../services/s3";
 import { buildSafeFileName } from "../../../utils/fileName";
+import { useNotify } from "../../../components/sakura/NotificationStack";
+import createPoller, { formatElapsedLabel } from "../../../lib/polling/createPoller";
+import { loadJob, saveJob, clearJob } from "../../../lib/polling/jobStore";
 import { CIVITAI_LORA_MODE_QUICK, CIVITAI_RUNTIME_PROFILE_ID } from "./image-studio-constants";
+
+const IMAGE_JOB_SLOT = "image";
+const IMAGE_POLL_INTERVAL_MS = 2500;
+const IMAGE_POLL_MAX_ATTEMPTS = 240; // ~10 minutes
 
 const buildUnsupportedLoraMessage = ({
   modelKey = "",
@@ -49,6 +56,7 @@ export const useImageGeneration = ({
   onCloseImageModal,
   onGenerationComplete,
 }) => {
+  const notify = useNotify();
   const [imageGenerationStatus, setImageGenerationStatus] = useState("idle");
   const [imageGenerationNotice, setImageGenerationNotice] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -62,9 +70,11 @@ export const useImageGeneration = ({
   const isUploading = uploadStatus === "uploading";
   const isGeneratingImage = imageGenerationStatus === "loading";
 
+  // Stops the local poll only — the sessionStorage job descriptor survives so
+  // a remount (navigation back to the page) can resume checking the job.
   const clearReplicatePoll = () => {
     if (replicatePollRef.current) {
-      clearTimeout(replicatePollRef.current);
+      replicatePollRef.current.stop();
       replicatePollRef.current = null;
     }
   };
@@ -120,87 +130,77 @@ export const useImageGeneration = ({
       })
     : "";
 
-  const startReplicateImagePolling = ({
-    predictionId,
-    batchId,
-    imageName: pollImageName,
-    prompt,
-    negativePrompt,
-  }) => {
+  const startImagePolling = ({ provider, params }) => {
     if (!apiBaseUrl) return;
-    const poll = async () => {
-      try {
-        const data = await getReplicateImageStatus(apiBaseUrl, {
-          predictionId,
-          batchId,
-          imageName: pollImageName,
-          prompt,
-          negativePrompt,
-        });
+    const label = provider === "civitai" ? "CivitAI" : "Replicate";
+    const fetchStatus = provider === "civitai" ? getCivitaiImageStatus : getReplicateImageStatus;
+    clearReplicatePoll();
+    saveJob(IMAGE_JOB_SLOT, { provider, params });
+    const finishError = (message) => {
+      clearJob(IMAGE_JOB_SLOT);
+      setImageGenerationStatus("error");
+      onError?.(message);
+      notify?.(message, "error");
+    };
+    const poller = createPoller({
+      intervalMs: IMAGE_POLL_INTERVAL_MS,
+      maxAttempts: IMAGE_POLL_MAX_ATTEMPTS,
+      maxConsecutiveErrors: 4,
+      task: async ({ elapsedMs }) => {
+        let data;
+        try {
+          data = await fetchStatus(apiBaseUrl, params);
+        } catch (error) {
+          if (error?.status === 401) {
+            // Session expired — AuthExpiryNotice handles the messaging.
+            clearJob(IMAGE_JOB_SLOT);
+            setImageGenerationStatus("idle");
+            return true;
+          }
+          throw error;
+        }
         if (data?.status === "succeeded") {
+          clearJob(IMAGE_JOB_SLOT);
           setImageGenerationNotice(data?.notice || "");
           setImageGenerationStatus("success");
-          clearReplicatePoll();
+          notify?.("Image generation finished.", "success");
           onGenerationComplete?.();
-          return;
+          return true;
         }
         if (data?.status === "failed" || data?.status === "canceled") {
-          clearReplicatePoll();
-          setImageGenerationStatus("error");
-          onError?.(data?.error || "Replicate image generation failed.");
-          return;
+          finishError(data?.error || `${label} image generation failed.`);
+          return true;
         }
-        setImageGenerationNotice("Replicate is still generating the image...");
-      } catch (_error) {
-        setImageGenerationNotice("Replicate is still generating the image...");
-      }
-      replicatePollRef.current = setTimeout(poll, 2500);
-    };
-    clearReplicatePoll();
-    replicatePollRef.current = setTimeout(poll, 2500);
+        setImageGenerationNotice(
+          `${label} is still generating the image... (${formatElapsedLabel(elapsedMs)})`
+        );
+        return false;
+      },
+      onExhausted: (reason) => {
+        finishError(
+          reason === "attempts"
+            ? `${label} is taking longer than expected — check the gallery later or try again.`
+            : `Lost contact while checking the ${label} job — please try again.`
+        );
+      },
+    });
+    replicatePollRef.current = poller;
+    poller.start();
   };
 
-  const startCivitaiImagePolling = ({
-    token,
-    batchId,
-    imageName: pollImageName,
-    prompt,
-    negativePrompt,
-    characterId,
-  }) => {
+  // Resume a generation left in flight by navigation: the poll dies with the
+  // component, but the job descriptor survives in sessionStorage.
+  const startImagePollingRef = useRef(null);
+  startImagePollingRef.current = startImagePolling;
+  useEffect(() => {
     if (!apiBaseUrl) return;
-    const poll = async () => {
-      try {
-        const data = await getCivitaiImageStatus(apiBaseUrl, {
-          token,
-          batchId,
-          imageName: pollImageName,
-          prompt,
-          negativePrompt,
-          characterId,
-        });
-        if (data?.status === "succeeded") {
-          setImageGenerationNotice(data?.notice || "");
-          setImageGenerationStatus("success");
-          clearReplicatePoll();
-          onGenerationComplete?.();
-          return;
-        }
-        if (data?.status === "failed") {
-          clearReplicatePoll();
-          setImageGenerationStatus("error");
-          onError?.(data?.error || "CivitAI image generation failed.");
-          return;
-        }
-        setImageGenerationNotice("CivitAI is still generating the image...");
-      } catch (_error) {
-        setImageGenerationNotice("CivitAI is still generating the image...");
-      }
-      replicatePollRef.current = setTimeout(poll, 2500);
-    };
-    clearReplicatePoll();
-    replicatePollRef.current = setTimeout(poll, 2500);
-  };
+    if (replicatePollRef.current) return;
+    const job = loadJob(IMAGE_JOB_SLOT);
+    if (!job?.provider || !job?.params) return;
+    setImageGenerationStatus("loading");
+    setImageGenerationNotice("Resuming image generation check...");
+    startImagePollingRef.current?.({ provider: job.provider, params: job.params });
+  }, [apiBaseUrl]);
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
@@ -326,19 +326,23 @@ export const useImageGeneration = ({
         if (data.status === "failed") {
           setImageGenerationStatus("error");
           onError?.(data?.error || "CivitAI image generation failed.");
+          notify?.(data?.error || "CivitAI image generation failed.", "error");
           return;
         }
         setImageGenerationNotice(
           data?.notice || "CivitAI is processing the image. We'll keep checking."
         );
         setImageGenerationStatus("loading");
-        startCivitaiImagePolling({
-          token: data.token,
-          batchId: data.batchId,
-          imageName: payload.imageName,
-          prompt: payload.prompt,
-          negativePrompt: payload.negativePrompt || "",
-          characterId: payload.characterId || "",
+        startImagePolling({
+          provider: "civitai",
+          params: {
+            token: data.token,
+            batchId: data.batchId,
+            imageName: payload.imageName,
+            prompt: payload.prompt,
+            negativePrompt: payload.negativePrompt || "",
+            characterId: payload.characterId || "",
+          },
         });
         return;
       }
@@ -346,27 +350,33 @@ export const useImageGeneration = ({
         if (data.status === "failed" || data.status === "canceled") {
           setImageGenerationStatus("error");
           onError?.(data?.error || "Replicate image generation failed.");
+          notify?.(data?.error || "Replicate image generation failed.", "error");
           return;
         }
         setImageGenerationNotice(
           data?.notice || "Replicate is processing the image. We'll keep checking."
         );
         setImageGenerationStatus("loading");
-        startReplicateImagePolling({
-          predictionId: data.predictionId,
-          batchId: data.batchId,
-          imageName: payload.imageName,
-          prompt: payload.prompt,
-          negativePrompt: payload.negativePrompt || "",
+        startImagePolling({
+          provider: "replicate",
+          params: {
+            predictionId: data.predictionId,
+            batchId: data.batchId,
+            imageName: payload.imageName,
+            prompt: payload.prompt,
+            negativePrompt: payload.negativePrompt || "",
+          },
         });
         return;
       }
       setImageGenerationNotice(data?.notice || "");
       setImageGenerationStatus("success");
+      notify?.("Image generation finished.", "success");
       onGenerationComplete?.();
     } catch (error) {
       setImageGenerationStatus("error");
       onError?.(error?.message || "Image generation failed.");
+      notify?.(error?.message || "Image generation failed.", "error");
     }
   };
 
@@ -379,6 +389,8 @@ export const useImageGeneration = ({
     setUploadKey("");
     setUploadStatus("idle");
     clearReplicatePoll();
+    // Explicit reset abandons the job — don't resurrect it on remount.
+    clearJob(IMAGE_JOB_SLOT);
   };
 
   const imageUploadProps = {

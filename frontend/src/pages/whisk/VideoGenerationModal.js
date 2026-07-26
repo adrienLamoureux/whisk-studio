@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "../../components/shared/Modal";
 
 /**
@@ -27,8 +27,26 @@ export default function VideoGenerationModal({
   handleGenerateVideo,
   isGeneratingVideo,
   isVideoInProgress,
+  videoJobNotice,
+  isExpensiveModelSelected,
 }) {
   const busy = isGeneratingVideo || isVideoInProgress;
+
+  // Costly models get an in-dialog confirmation step (replaces the old
+  // native window.confirm). Reset whenever the model selection changes.
+  const [confirmingExpensive, setConfirmingExpensive] = useState(false);
+  useEffect(() => {
+    setConfirmingExpensive(false);
+  }, [videoModel, videoProvider]);
+
+  const handleGenerateClick = () => {
+    if (isExpensiveModelSelected && !confirmingExpensive) {
+      setConfirmingExpensive(true);
+      return;
+    }
+    setConfirmingExpensive(false);
+    handleGenerateVideo();
+  };
 
   return (
     <Modal
@@ -103,23 +121,35 @@ export default function VideoGenerationModal({
             </label>
           </div>
         )}
-        {error && <p style={{ fontSize: 12, color: "#ef4444", margin: 0 }}>{error}</p>}
+        {error && (
+          <p style={{ fontSize: 12, color: "var(--skr-accent-danger)", margin: 0 }}>{error}</p>
+        )}
+        {confirmingExpensive && (
+          <p style={{ fontSize: 12, color: "var(--skr-accent-warning)", margin: 0 }}>
+            This model can be expensive to run. Generate anyway?
+          </p>
+        )}
         <div style={{ display: "flex", gap: 8 }}>
           <button
             className="skr-btn-primary"
             style={{ flex: 1 }}
-            onClick={handleGenerateVideo}
+            onClick={handleGenerateClick}
             disabled={busy}
           >
-            {busy ? "Generating…" : "Generate Video"}
+            {busy ? "Generating…" : confirmingExpensive ? "Yes, generate" : "Generate Video"}
           </button>
-          <button className="skr-btn-secondary" onClick={onClose} disabled={busy}>
+          <button
+            className="skr-btn-secondary"
+            onClick={confirmingExpensive ? () => setConfirmingExpensive(false) : onClose}
+            disabled={busy}
+          >
             Cancel
           </button>
         </div>
         {busy && (
           <p style={{ fontSize: 12, color: "var(--skr-text-secondary)", textAlign: "center" }}>
-            Video generation is running in the background. Check the Videos page when done.
+            {videoJobNotice ||
+              "Video generation is running in the background. Check the Videos page when done."}
           </p>
         )}
       </div>

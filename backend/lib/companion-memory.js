@@ -74,6 +74,9 @@ function createCompanionMemory({
     const memSk = buildCompanionMemorySk(modelId);
     const msgPrefix = companionMsgPrefix(modelId);
 
+    // media-store's queryBySkPrefix takes an OBJECT — the old positional call
+    // silently returned [] and made server-side history a no-op in production.
+    // Newest-first + reverse gives the LAST N messages in chronological order.
     const [memRecord, messages] = await Promise.all([
       dynamoClient
         .send(
@@ -83,7 +86,7 @@ function createCompanionMemory({
           })
         )
         .catch(() => ({ Item: null })),
-      queryBySkPrefix(pk, msgPrefix, MAX_HISTORY_LOAD),
+      queryBySkPrefix({ pk, skPrefix: msgPrefix, limit: MAX_HISTORY_LOAD, scanForward: false }),
     ]);
 
     if (!memRecord.Item && (!messages || messages.length === 0)) {
@@ -93,11 +96,14 @@ function createCompanionMemory({
     return {
       summary: memRecord.Item?.summary || null,
       turnCount: memRecord.Item?.turnCount || 0,
-      messages: (messages || []).map((m) => ({
-        role: m.role,
-        content: m.content,
-        createdAt: m.createdAt,
-      })),
+      messages: (messages || [])
+        .slice()
+        .reverse()
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+          createdAt: m.createdAt,
+        })),
     };
   }
 
@@ -208,8 +214,16 @@ function createCompanionMemory({
     const msgPrefix = companionMsgPrefix(modelId);
 
     try {
-      const oldMessages = await queryBySkPrefix(pk, msgPrefix, COMPACT_WINDOW);
-      if (!oldMessages || oldMessages.length < COMPACT_WINDOW / 2) return;
+      // Oldest first, over-fetched by MAX_HISTORY_LOAD: only compact when the
+      // recent context window is guaranteed to survive the deletion.
+      const oldest = await queryBySkPrefix({
+        pk,
+        skPrefix: msgPrefix,
+        limit: COMPACT_WINDOW + MAX_HISTORY_LOAD,
+        scanForward: true,
+      });
+      if (!oldest || oldest.length < COMPACT_WINDOW + MAX_HISTORY_LOAD) return;
+      const oldMessages = oldest.slice(0, COMPACT_WINDOW);
 
       // Build a condensation prompt
       const transcript = oldMessages
@@ -264,7 +278,7 @@ function createCompanionMemory({
     const msgPrefix = companionMsgPrefix(modelId);
 
     try {
-      const allMessages = await queryBySkPrefix(pk, msgPrefix, 200);
+      const allMessages = await queryBySkPrefix({ pk, skPrefix: msgPrefix, limit: 200 });
       await Promise.all([
         ...(allMessages || []).map((item) =>
           dynamoClient

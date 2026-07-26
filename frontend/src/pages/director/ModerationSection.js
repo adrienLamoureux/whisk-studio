@@ -141,7 +141,7 @@ export default function ModerationSection({ apiBaseUrl }) {
                   </span>
                   <button
                     className="skr-btn-secondary"
-                    style={{ fontSize: 10, padding: "2px 6px", color: "#ef4444" }}
+                    style={{ fontSize: 10, padding: "2px 6px", color: "var(--skr-accent-danger)" }}
                     onClick={() => handleDelete(item)}
                     disabled={deletingKey === key}
                   >

@@ -299,7 +299,9 @@ export default function StoryMusicLibrary() {
               </div>
             </div>
             {uploadError && (
-              <p style={{ fontSize: 12, color: "#ef4444", margin: 0 }}>{uploadError}</p>
+              <p style={{ fontSize: 12, color: "var(--skr-accent-danger)", margin: 0 }}>
+                {uploadError}
+              </p>
             )}
             {uploadNotice && (
               <p style={{ fontSize: 12, color: "var(--skr-accent)", margin: 0 }}>{uploadNotice}</p>

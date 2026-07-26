@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import SolarisMasonry from "../components/SolarisMasonry";
 import GalleryCard from "../components/shared/GalleryCard";
+import Lightbox from "../components/shared/Lightbox";
 import { useConfig } from "../contexts/ConfigContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
@@ -202,18 +203,7 @@ export default function HomePage() {
       </div>
 
       {/* Lightbox */}
-      {lightboxImage && (
-        <div className="skr-lightbox" onClick={() => setLightboxImage(null)}>
-          <button className="skr-lightbox-close" onClick={() => setLightboxImage(null)}>
-            ✕
-          </button>
-          <img
-            src={lightboxImage.url}
-            alt={lightboxImage.prompt || ""}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+      <Lightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
 
       {/* Shared videos */}
       <div className="skr-page-header" style={{ marginTop: 40 }}>

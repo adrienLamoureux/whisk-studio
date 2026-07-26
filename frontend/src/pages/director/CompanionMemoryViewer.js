@@ -81,7 +81,7 @@ export default function CompanionMemoryViewer({ apiBaseUrl }) {
         {memory && (
           <button
             className="skr-btn-secondary"
-            style={{ fontSize: 11, color: "#ef4444" }}
+            style={{ fontSize: 11, color: "var(--skr-accent-danger)" }}
             onClick={handleClear}
             disabled={isClearing}
           >

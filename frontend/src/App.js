@@ -27,6 +27,7 @@ import { ModeProvider, useMode } from "./lib/mode/ModeContext";
 import { AgentProvider } from "./lib/agent/AgentContext";
 import CompanionStage from "./components/sakura/companion-mode/CompanionStage";
 import { NotificationProvider } from "./components/sakura/NotificationStack";
+import AuthExpiryNotice from "./components/sakura/AuthExpiryNotice";
 import { getAuthToken } from "./utils/authTokens";
 import NAV_ITEMS from "./lib/nav/navItems";
 
@@ -315,6 +316,7 @@ function ConfiguredApp() {
             <ModeProvider>
               <AgentProvider>
                 <NotificationProvider>
+                  <AuthExpiryNotice />
                   <Router>
                     <AppRoutes />
                   </Router>

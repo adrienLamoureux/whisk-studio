@@ -162,9 +162,10 @@ export default function Story() {
           createdAt: m.createdAt || null,
         }));
 
-        // The DB does not store sceneId on messages — match chronologically:
-        // sort scenes by createdAt, then pair each scene with the nearest
-        // assistant message that doesn't already have a sceneId.
+        // New sessions store sceneId on the assistant message (kept above).
+        // Legacy messages predate that, so fall back to chronological
+        // pairing: sort scenes by createdAt, then pair each scene with the
+        // nearest assistant message that doesn't already have a sceneId.
         if (rawScenes.length > 0) {
           const sorted = [...rawScenes]
             .filter((s) => s?.sceneId)
@@ -281,7 +282,7 @@ export default function Story() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { handleCreateSession, sendMessage } = useStoryActions({
+  const { handleCreateSession, sendMessage, regenerateLastReply } = useStoryActions({
     apiBaseUrl,
     presets,
     selectedPresetId,
@@ -387,7 +388,9 @@ export default function Story() {
         </div>
       </div>
 
-      {error && <p style={{ fontSize: 12, color: "#ef4444", marginBottom: 8 }}>{error}</p>}
+      {error && (
+        <p style={{ fontSize: 12, color: "var(--skr-accent-danger)", marginBottom: 8 }}>{error}</p>
+      )}
 
       <StoryLoraSwitcher
         activeSessionId={activeSessionId}
@@ -434,6 +437,12 @@ export default function Story() {
         input={input}
         onInputChange={setInput}
         onSend={sendMessage}
+        onRegenerate={regenerateLastReply}
+        canRegenerate={
+          messages.length > 0 &&
+          messages[messages.length - 1].role === "assistant" &&
+          messages.some((m) => m.role === "user")
+        }
         isLoading={loadingSession}
         isSending={sending}
         activeSessionId={activeSessionId}

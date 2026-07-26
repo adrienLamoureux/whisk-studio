@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import CharacterLoraSelector from "../../components/shared/CharacterLoraSelector";
 import CivitaiLoraPanel from "./CivitaiLoraPanel";
 import PromptHelperPanel from "./PromptHelperPanel";
@@ -49,6 +49,18 @@ export default function GenerationModal({
   const { promptHelperProps } = imageGenerationProps || {};
   const isUpload = imageSource === "upload";
 
+  // Escape-to-close + initial focus, matching what the shared Modal provides
+  // (this stays hand-rolled only to keep the slide-in drawer presentation).
+  const closeButtonRef = useRef(null);
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
     <>
       {/* Backdrop — click to close */}
@@ -63,7 +75,12 @@ export default function GenerationModal({
       >
         <div className="skr-gen-drawer-header">
           <span className="skr-gen-drawer-title">Full Options</span>
-          <button className="skr-gen-drawer-close" onClick={onClose} aria-label="Close">
+          <button
+            ref={closeButtonRef}
+            className="skr-gen-drawer-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
@@ -223,7 +240,11 @@ export default function GenerationModal({
                   {imageGenerationNotice}
                 </p>
               )}
-              {error && <p style={{ fontSize: 12, color: "#ef4444", margin: 0 }}>{error}</p>}
+              {error && (
+                <p style={{ fontSize: 12, color: "var(--skr-accent-danger)", margin: 0 }}>
+                  {error}
+                </p>
+              )}
             </>
           ) : (
             <>
@@ -257,7 +278,11 @@ export default function GenerationModal({
                   }}
                 />
               )}
-              {error && <p style={{ fontSize: 12, color: "#ef4444", margin: 0 }}>{error}</p>}
+              {error && (
+                <p style={{ fontSize: 12, color: "var(--skr-accent-danger)", margin: 0 }}>
+                  {error}
+                </p>
+              )}
             </>
           )}
         </div>

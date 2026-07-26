@@ -214,6 +214,9 @@ module.exports = function registerStorySessionItemRoutes(deps) {
           role: message.role,
           content: message.content,
           createdAt: message.createdAt,
+          // Present on messages written since scene linking landed; legacy
+          // messages omit it and the frontend falls back to timestamp pairing.
+          ...(message.sceneId ? { sceneId: message.sceneId } : {}),
         })),
         scenes: signedScenes.map((scene) => ({
           sceneId: scene.sceneId,

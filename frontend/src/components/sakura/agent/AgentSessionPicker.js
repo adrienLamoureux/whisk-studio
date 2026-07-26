@@ -11,14 +11,16 @@
  *     record + switches immediately
  *   - Each row has a rename + delete affordance on hover
  *
- * Uses native <prompt> / <confirm> for v1.7. Custom modal UI is parked for
- * v1.8 — picker is admin-adjacent functionality and the native dialogs are
- * acceptable for early adopters.
+ * Create/rename/delete all run through the shared Modal (name input or
+ * confirm dialog) so the in-character surface never drops to native
+ * window.prompt/confirm chrome; failures surface as toasts.
  */
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useConfig } from "../../../contexts/ConfigContext";
 import { useAgent } from "../../../lib/agent/AgentContext";
+import Modal from "../../shared/Modal";
+import { useNotify } from "../NotificationStack";
 import {
   listAgentSessions,
   createAgentSession,
@@ -32,9 +34,13 @@ const DEFAULT_SESSION = { sessionId: "default", name: "Default" };
 export default function AgentSessionPicker() {
   const { apiBaseUrl } = useConfig();
   const { activeSessionId, setActiveSession } = useAgent();
+  const notify = useNotify();
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  // dialog: null | {type:"create"} | {type:"rename",session} | {type:"delete",session}
+  const [dialog, setDialog] = useState(null);
+  const [nameInput, setNameInput] = useState("");
   const menuRef = useRef(null);
 
   const load = useCallback(() => {
@@ -73,50 +79,63 @@ export default function AgentSessionPicker() {
     setOpen(false);
   };
 
-  const handleCreate = async () => {
-    const name = window.prompt("Name this session:", "New project");
-    if (!name || !name.trim()) return;
+  const handleCreate = () => {
+    setNameInput("New project");
+    setDialog({ type: "create" });
+  };
+
+  const handleRename = (s) => {
+    setNameInput(s.name);
+    setDialog({ type: "rename", session: s });
+  };
+
+  const handleDelete = (s) => {
+    if (s.sessionId === "default") return;
+    setDialog({ type: "delete", session: s });
+  };
+
+  const closeDialog = () => {
+    setDialog(null);
+    setNameInput("");
+  };
+
+  const confirmDialog = async () => {
+    if (!dialog) return;
+    const name = nameInput.trim();
     setPending(true);
     try {
-      const sessionId = mintSessionId();
-      const res = await createAgentSession(apiBaseUrl, { sessionId, name: name.trim() });
-      const created = res?.session || { sessionId, name: name.trim() };
-      setItems((prev) => [created, ...prev]);
-      handleSwitch(created.sessionId);
+      if (dialog.type === "create") {
+        if (!name) return;
+        const sessionId = mintSessionId();
+        const res = await createAgentSession(apiBaseUrl, { sessionId, name });
+        const created = res?.session || { sessionId, name };
+        setItems((prev) => [created, ...prev]);
+        handleSwitch(created.sessionId);
+      } else if (dialog.type === "rename") {
+        const s = dialog.session;
+        if (!name || name === s.name) return;
+        await renameAgentSession(apiBaseUrl, s.sessionId, name);
+        setItems((prev) => prev.map((it) => (it.sessionId === s.sessionId ? { ...it, name } : it)));
+      } else if (dialog.type === "delete") {
+        const s = dialog.session;
+        await deleteAgentSession(apiBaseUrl, s.sessionId);
+        setItems((prev) => prev.filter((it) => it.sessionId !== s.sessionId));
+        if (activeSessionId === s.sessionId) setActiveSession("default");
+      }
+      closeDialog();
     } catch (err) {
-      window.alert(`Couldn't create session: ${err?.message || "unknown error"}`);
+      notify?.(`Couldn't ${dialog.type} session: ${err?.message || "unknown error"}`, "error");
     } finally {
       setPending(false);
     }
   };
 
-  const handleRename = async (s) => {
-    const next = window.prompt("Rename session:", s.name);
-    if (!next || !next.trim() || next.trim() === s.name) return;
-    try {
-      await renameAgentSession(apiBaseUrl, s.sessionId, next.trim());
-      setItems((prev) =>
-        prev.map((it) => (it.sessionId === s.sessionId ? { ...it, name: next.trim() } : it))
-      );
-    } catch (err) {
-      window.alert(`Couldn't rename: ${err?.message || "unknown error"}`);
-    }
-  };
-
-  const handleDelete = async (s) => {
-    if (s.sessionId === "default") return;
-    const ok = window.confirm(
-      `Delete "${s.name}"? This also wipes the conversation memory for this session.`
-    );
-    if (!ok) return;
-    try {
-      await deleteAgentSession(apiBaseUrl, s.sessionId);
-      setItems((prev) => prev.filter((it) => it.sessionId !== s.sessionId));
-      if (activeSessionId === s.sessionId) setActiveSession("default");
-    } catch (err) {
-      window.alert(`Couldn't delete: ${err?.message || "unknown error"}`);
-    }
-  };
+  const dialogTitle =
+    dialog?.type === "create"
+      ? "New session"
+      : dialog?.type === "rename"
+        ? "Rename session"
+        : "Delete session";
 
   return (
     <div className="skr-session-picker" ref={menuRef}>
@@ -179,6 +198,55 @@ export default function AgentSessionPicker() {
             + New session
           </button>
         </div>
+      ) : null}
+
+      {dialog ? (
+        <Modal variant="panel" title={dialogTitle} onClose={closeDialog} style={{ width: 360 }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              confirmDialog();
+            }}
+            style={{ display: "flex", flexDirection: "column", gap: 12 }}
+          >
+            {dialog.type === "delete" ? (
+              <p style={{ fontSize: 13, margin: 0 }}>
+                Delete “{dialog.session.name}”? This also wipes the conversation memory for this
+                session.
+              </p>
+            ) : (
+              <input
+                className="skr-input"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Session name"
+                aria-label="Session name"
+                autoFocus
+              />
+            )}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="skr-btn-secondary"
+                onClick={closeDialog}
+                disabled={pending}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="skr-btn-primary"
+                disabled={pending || (dialog.type !== "delete" && !nameInput.trim())}
+              >
+                {dialog.type === "create"
+                  ? "Create"
+                  : dialog.type === "rename"
+                    ? "Rename"
+                    : "Delete"}
+              </button>
+            </div>
+          </form>
+        </Modal>
       ) : null}
     </div>
   );

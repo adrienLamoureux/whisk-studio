@@ -28,6 +28,34 @@ export const friendlyAgentError = (code, fallback) => {
   return FRIENDLY_AGENT_ERRORS[prefix] || fallback || "Something tripped me up — try again?";
 };
 
+// "try again in 45s" / "in 12m" / "in ~3h" — from the backend's retryAfterMs.
+export const formatRetryDelay = (ms) => {
+  const totalSeconds = Math.ceil(ms / 1000);
+  if (totalSeconds < 60) return `try again in ${totalSeconds}s`;
+  const minutes = Math.ceil(totalSeconds / 60);
+  if (minutes < 60) return `try again in ${minutes}m`;
+  return `try again in ~${Math.ceil(minutes / 60)}h`;
+};
+
+// Codes whose responses carry a meaningful retryAfterMs worth showing.
+const RETRY_AWARE_CODES = new Set(["rate_limited", "daily_cap_reached", "image_daily_cap_reached"]);
+
+/**
+ * Error-object-aware variant: prefers the structured `errorCode` fetchJson
+ * stamps on thrown errors, and appends the backend-computed wait time for
+ * rate-limit/cap errors (previously computed server-side and discarded here).
+ */
+export const friendlyAgentErrorFor = (err, fallback) => {
+  const code = err?.errorCode || err?.message;
+  const base = friendlyAgentError(code, fallback);
+  const retryAfterMs = Number(err?.body?.retryAfterMs || 0);
+  const prefix = String(code || "").split(":")[0];
+  if (retryAfterMs > 0 && RETRY_AWARE_CODES.has(prefix)) {
+    return `${base} (${formatRetryDelay(retryAfterMs)})`;
+  }
+  return base;
+};
+
 /**
  * Was this error specifically the backend signalling that Agent mode is
  * disabled (feature flag off)? Used by AgentContext to auto-flip the user

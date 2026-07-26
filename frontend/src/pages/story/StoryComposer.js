@@ -7,6 +7,8 @@ import React from "react";
  *   input           – controlled string value of the textarea
  *   onInputChange   – (value: string) => void  — called on every keystroke
  *   onSend          – () => void  — called when the user submits
+ *   onRegenerate    – () => void  — re-asks the model for the last reply
+ *   canRegenerate   – bool  — true when the last message is a reply to a user turn
  *   isLoading       – bool  — true while a session is being loaded
  *   isSending       – bool  — true while a message round-trip is in flight
  *   activeSessionId – string | '' — empty when no session is active
@@ -15,6 +17,8 @@ export default function StoryComposer({
   input,
   onInputChange,
   onSend,
+  onRegenerate,
+  canRegenerate,
   isLoading,
   isSending,
   activeSessionId,
@@ -38,6 +42,17 @@ export default function StoryComposer({
         onKeyDown={handleKey}
         disabled={isSending || isLoading || !activeSessionId}
       />
+      {canRegenerate && (
+        <button
+          className="skr-btn-secondary"
+          onClick={onRegenerate}
+          disabled={isSending || isLoading || !activeSessionId}
+          style={{ alignSelf: "flex-end" }}
+          title="Ask for a different reply to your last message"
+        >
+          ↻ Regenerate
+        </button>
+      )}
       <button
         className="skr-btn-primary"
         onClick={onSend}

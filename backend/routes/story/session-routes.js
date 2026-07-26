@@ -7,6 +7,7 @@ const {
 } = require("./session-helpers");
 const { requireEnv, requireAuth, requireParam } = require("../../lib/route-guards");
 const { handleRouteError } = require("../../lib/error-handler");
+const { ACTIVE_STORY_PRESET_IDS, filterActiveStoryPresets } = require("./active-presets");
 
 module.exports = function registerStorySessionRoutes(deps) {
   const {
@@ -30,10 +31,6 @@ module.exports = function registerStorySessionRoutes(deps) {
     buildUserPrefix,
     deleteS3ObjectsByPrefix,
   } = deps;
-
-  const ACTIVE_STORY_PRESET_IDS = new Set(["frieren-road"]);
-  const filterActiveStoryPresets = (presets = []) =>
-    presets.filter((preset) => ACTIVE_STORY_PRESET_IDS.has(preset?.id));
 
   const deleteSessionCascade = async ({ userId, sessionId, mediaTableName, mediaBucket }) => {
     const messages = await queryBySkPrefix({

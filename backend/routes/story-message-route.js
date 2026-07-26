@@ -1,3 +1,5 @@
+const { buildStorySystemPrompt } = require("./story/build-story-system-prompt");
+
 module.exports = (app, deps) => {
   const {
     mediaTable,
@@ -24,6 +26,8 @@ module.exports = (app, deps) => {
     dedupeFragments,
     splitPromptFragments,
     buildStorySceneSk,
+    storyMemory,
+    DeleteCommand,
   } = deps;
 
   const parseBooleanLike = (value) => {
@@ -41,6 +45,9 @@ module.exports = (app, deps) => {
     const userId = req.user?.sub;
     const sessionId = req.params.id;
     const content = req.body?.content?.trim();
+    // regenerate=true re-answers the last user turn: no new user message is
+    // written and the previous assistant reply is removed from history.
+    const regenerate = req.body?.regenerate === true;
     const debug = req.query?.debug === "true";
     if (!mediaTable) {
       return res.status(500).json({ message: "MEDIA_TABLE is not set" });
@@ -51,7 +58,7 @@ module.exports = (app, deps) => {
     if (!sessionId) {
       return res.status(400).json({ message: "sessionId is required" });
     }
-    if (!content) {
+    if (!content && !regenerate) {
       return res.status(400).json({ message: "content is required" });
     }
 
@@ -65,23 +72,34 @@ module.exports = (app, deps) => {
       }
 
       const now = new Date().toISOString();
-      const newTurnCount = (sessionItem.turnCount || 0) + 1;
-      const lastIllustrationTurn = sessionItem.lastIllustrationTurn || 0;
-      const userMessageItem = {
-        pk: buildMediaPk(userId),
-        sk: buildStoryMessageSk(sessionId, Date.now()),
-        type: "STORY_MESSAGE",
-        sessionId,
-        role: "user",
-        content,
-        createdAt: now,
-      };
-      await dynamoClient.send(
-        new PutCommand({
-          TableName: mediaTable,
-          Item: userMessageItem,
-        })
-      );
+      const newTurnCount = regenerate
+        ? sessionItem.turnCount || 1
+        : (sessionItem.turnCount || 0) + 1;
+
+      // Regenerate is a true re-roll: the previous attempt's effects must be
+      // undone, not stacked on. `previousTurn` holds the pre-turn snapshot
+      // written by every normal turn; without it (legacy sessions) we fall
+      // back to current state, which is the old compounding behaviour.
+      const rollback = regenerate ? sessionItem.previousTurn || null : null;
+      const baseState = rollback || sessionItem;
+      const lastIllustrationTurn = baseState.lastIllustrationTurn || 0;
+      if (!regenerate) {
+        const userMessageItem = {
+          pk: buildMediaPk(userId),
+          sk: buildStoryMessageSk(sessionId, Date.now()),
+          type: "STORY_MESSAGE",
+          sessionId,
+          role: "user",
+          content,
+          createdAt: now,
+        };
+        await dynamoClient.send(
+          new PutCommand({
+            TableName: mediaTable,
+            Item: userMessageItem,
+          })
+        );
+      }
 
       const recentMessages = await queryBySkPrefix({
         pk: buildMediaPk(userId),
@@ -89,7 +107,38 @@ module.exports = (app, deps) => {
         limit: 8,
         scanForward: false,
       });
-      const orderedMessages = recentMessages.reverse();
+      let orderedMessages = recentMessages.reverse();
+      if (regenerate) {
+        // Drop and delete the reply being regenerated so the model re-answers
+        // the last user turn instead of continuing past its own old reply.
+        const lastMessage = orderedMessages[orderedMessages.length - 1];
+        if (lastMessage?.role === "assistant" && lastMessage?.sk) {
+          orderedMessages = orderedMessages.slice(0, -1);
+          await dynamoClient.send(
+            new DeleteCommand({
+              TableName: mediaTable,
+              Key: { pk: buildMediaPk(userId), sk: lastMessage.sk },
+            })
+          );
+          // The discarded reply's scene would otherwise be orphaned: still in
+          // the table, counted in sceneCount, with an image job nobody polls.
+          if (lastMessage.sceneId) {
+            await dynamoClient.send(
+              new DeleteCommand({
+                TableName: mediaTable,
+                Key: {
+                  pk: buildMediaPk(userId),
+                  sk: buildStorySceneSk(sessionId, lastMessage.sceneId),
+                },
+              })
+            );
+          }
+        }
+        const hasUserTurn = orderedMessages.some((message) => message.role === "user");
+        if (!hasUserTurn) {
+          return res.status(400).json({ message: "Nothing to regenerate yet" });
+        }
+      }
       const lorebookSeed = {
         id: sessionItem.presetId,
         name: sessionItem.title,
@@ -100,7 +149,7 @@ module.exports = (app, deps) => {
       };
       const resolvedLorebook =
         sessionItem.lorebook || resolveStoryLorebook(lorebookSeed, sessionItem.protagonistName);
-      const resolvedStoryState = sessionItem.storyState || buildInitialStoryState(resolvedLorebook);
+      const resolvedStoryState = baseState.storyState || buildInitialStoryState(resolvedLorebook);
       const directorSelection = selectStoryEvent(
         resolvedLorebook,
         resolvedStoryState,
@@ -109,74 +158,81 @@ module.exports = (app, deps) => {
       const directorCue = directorSelection.cue;
       const isPlayerSeparated = (resolvedStoryState.flags || []).includes("player-separated");
 
-      const systemPrompt = [
-        "You are a narrative director for an interactive anime adventure.",
-        `Protagonist: ${sessionItem.protagonistName}.`,
-        "The protagonist must remain the same character in every scene.",
-        "Keep continuity with the story summary and prior dialogue.",
-        "Keep narration minimal. Favor direct action and dialogue from the protagonist.",
-        "Each paragraph should include the protagonist acting or speaking. Avoid long exposition.",
-        "Environment changes should be concise (one short sentence max) and reflected in stateDelta.",
-        "Perspective rule: the player only knows what they directly perceive.",
-        "If Frieren acts away from the player, do not render full off-screen conversations; summarize key outcome in 1-2 concise sentences, then return to direct interaction with the player.",
-        "When the player indicates movement or a new place (inn, village, road, ruins), update stateDelta.scene.locationId/locationName/description accordingly using the Lorebook locations.",
-        "Use the Lorebook and Current State to keep environment, NPCs, and goals coherent.",
-        "Integrate the Director cue into the next reply. If initiative is protagonist, the protagonist should act first or propose an action without waiting for the player.",
-        "Respond in 2-4 short paragraphs, then end with a question to the player.",
-        "When a meaningful scene beat occurs, mark it as a sceneBeat.",
-        "Update stateDelta to reflect changes in location, time, weather, tags, goals, flags, NPC presence, and metrics (tension, mystery, urgency, progress, fatigue).",
-        "stateDelta schema: { scene: { locationId, locationName, description, timeOfDay, weather, mood, direction, tagsAdd, tagsRemove, nearbyAdd, nearbyRemove }, metrics: { tension, mystery, urgency, progress, fatigue }, metricsDelta: { tension, mystery, urgency, progress, fatigue }, goals: { activeAdd, activeRemove, completedAdd }, flags: { add, remove }, npcs: { presentAdd, presentRemove } }.",
-        "Return ONLY valid JSON with keys:",
-        "reply (string), summary (string), sceneBeat (boolean), sceneTitle (string), sceneDescription (string), scenePrompt (string), sceneEnvironment (string), sceneAction (string), stateDelta (object).",
-        "scenePrompt should focus on visual details of the moment (environment, action, mood) and be concise.",
-        "scenePrompt must be purely visual fragments (comma-separated). No dialogue, no questions, no second-person phrasing.",
-        "sceneEnvironment: comma-separated background/environment fragments (short phrases).",
-        "sceneAction: comma-separated action/pose/motion fragments (short phrases).",
-        "scenePrompt should include framing guidance that fits the visible action and preserves body continuity, with readable face and no extreme wide shots.",
-        `Player separation mode: ${isPlayerSeparated ? "separated" : "shared-scene"}.`,
-        `Lorebook: ${JSON.stringify(resolvedLorebook)}`,
-        `Current state: ${JSON.stringify(resolvedStoryState)}`,
-        `Director cue: ${directorCue ? JSON.stringify(directorCue) : "none"}`,
-        `Story summary: ${sessionItem.summary || "New story."}`,
-        `World: ${sessionItem.worldPrompt}`,
-        `Style: ${sessionItem.stylePrompt}`,
-      ].join("\n");
+      const systemPrompt = buildStorySystemPrompt({
+        sessionItem,
+        resolvedLorebook,
+        resolvedStoryState,
+        directorCue,
+        isPlayerSeparated,
+      });
 
       const messagePayload = orderedMessages.map((message) => ({
         role: message.role,
         content: [{ type: "text", text: message.content }],
       }));
 
-      const command = new InvokeModelCommand({
-        modelId: storyModelId,
-        contentType: "application/json",
-        accept: "application/json",
-        body: JSON.stringify({
-          anthropic_version: "bedrock-2023-05-31",
-          max_tokens: 600,
-          temperature: 0.7,
-          system: systemPrompt,
-          messages: messagePayload,
-        }),
-      });
-      const response = await bedrockClient.send(command);
-      const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-      const responseText = (responseBody?.content || [])
-        .map((item) => item?.text)
-        .filter(Boolean)
-        .join("")
-        .trim();
+      const invokeStoryModel = async () => {
+        const command = new InvokeModelCommand({
+          modelId: storyModelId,
+          contentType: "application/json",
+          accept: "application/json",
+          body: JSON.stringify({
+            anthropic_version: "bedrock-2023-05-31",
+            max_tokens: 600,
+            temperature: 0.7,
+            system: systemPrompt,
+            messages: messagePayload,
+          }),
+        });
+        const response = await bedrockClient.send(command);
+        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+        return (responseBody?.content || [])
+          .map((item) => item?.text)
+          .filter(Boolean)
+          .join("")
+          .trim();
+      };
 
-      const parsed = safeJsonParse(responseText) || {};
+      const hasUsableReply = (candidate, text) =>
+        (typeof candidate.reply === "string" && candidate.reply.trim().length > 0) ||
+        Boolean(extractJsonStringField(text, "reply"));
+
+      let responseText = await invokeStoryModel();
+      let parsed = safeJsonParse(responseText) || {};
+      // One bounded same-params retry when the output carries no usable reply
+      // — previously a malformed turn silently degraded with no second chance.
+      let degraded = false;
+      if (!hasUsableReply(parsed, responseText)) {
+        responseText = await invokeStoryModel();
+        parsed = safeJsonParse(responseText) || {};
+        if (!hasUsableReply(parsed, responseText)) {
+          degraded = true;
+          console.warn("Story model output unparseable after retry", {
+            sessionId,
+            userId,
+            turnCount: newTurnCount,
+          });
+        }
+      }
+
       const extractedReply =
         typeof parsed.reply === "string" && parsed.reply.trim().length > 0
           ? ""
           : extractJsonStringField(responseText, "reply");
       const replyText = parsed.reply || extractedReply || responseText || "The story continues.";
-      const nextSummary =
+      const modelSummary =
         typeof parsed.summary === "string" && parsed.summary.trim().length > 0
           ? parsed.summary.trim()
-          : sessionItem.summary || "";
+          : "";
+      if (!modelSummary && !degraded) {
+        // Observable, not fatal — the turn keeps the previous summary, but a
+        // model that stops updating summaries erodes long-story coherence.
+        console.warn("Story model omitted summary; keeping previous", {
+          sessionId,
+          turnCount: newTurnCount,
+        });
+      }
+      const nextSummary = modelSummary || baseState.summary || "";
       const sceneBeat = parseBooleanLike(parsed.sceneBeat);
       const sceneTitle = parsed.sceneTitle?.trim() || "";
       const sceneDescription = parsed.sceneDescription?.trim() || "";
@@ -185,22 +241,6 @@ module.exports = (app, deps) => {
       let sceneAction = parsed.sceneAction?.trim() || "";
       const rawStateDelta = parsed.stateDelta;
       const stateDelta = rawStateDelta && typeof rawStateDelta === "object" ? rawStateDelta : {};
-
-      const assistantMessageItem = {
-        pk: buildMediaPk(userId),
-        sk: buildStoryMessageSk(sessionId, Date.now() + 1),
-        type: "STORY_MESSAGE",
-        sessionId,
-        role: "assistant",
-        content: replyText,
-        createdAt: new Date().toISOString(),
-      };
-      await dynamoClient.send(
-        new PutCommand({
-          TableName: mediaTable,
-          Item: assistantMessageItem,
-        })
-      );
 
       let nextStoryState = applyStateDelta(
         resolvedStoryState,
@@ -300,7 +340,7 @@ module.exports = (app, deps) => {
       }
 
       let scene = null;
-      let nextSceneCount = sessionItem.sceneCount || 0;
+      let nextSceneCount = baseState.sceneCount || 0;
       const isSituationIllustration =
         locationChanged || eventType === "environment" || eventType === "discovery";
       const isCadenceIllustration = shouldAutoIllustrate;
@@ -346,6 +386,26 @@ module.exports = (app, deps) => {
         };
       }
 
+      // Persisted after the scene decision so the message can carry its
+      // sceneId — the frontend then pairs message↔scene by id instead of the
+      // fragile nearest-timestamp heuristic (kept only for legacy sessions).
+      const assistantMessageItem = {
+        pk: buildMediaPk(userId),
+        sk: buildStoryMessageSk(sessionId, Date.now() + 1),
+        type: "STORY_MESSAGE",
+        sessionId,
+        role: "assistant",
+        content: replyText,
+        ...(scene ? { sceneId: scene.sceneId } : {}),
+        createdAt: new Date().toISOString(),
+      };
+      await dynamoClient.send(
+        new PutCommand({
+          TableName: mediaTable,
+          Item: assistantMessageItem,
+        })
+      );
+
       const updatedSession = {
         ...sessionItem,
         summary: nextSummary,
@@ -354,6 +414,17 @@ module.exports = (app, deps) => {
         turnCount: newTurnCount,
         sceneCount: nextSceneCount,
         lastIllustrationTurn: shouldIllustrate ? newTurnCount : lastIllustrationTurn,
+        // Snapshot of the state this turn started from, so Regenerate can roll
+        // back instead of compounding. Preserved untouched across repeated
+        // regenerates so every re-roll starts from the same base.
+        previousTurn: regenerate
+          ? sessionItem.previousTurn || null
+          : {
+              storyState: resolvedStoryState,
+              sceneCount: baseState.sceneCount || 0,
+              lastIllustrationTurn,
+              summary: baseState.summary || "",
+            },
         updatedAt: new Date().toISOString(),
       };
 
@@ -363,6 +434,12 @@ module.exports = (app, deps) => {
           Item: updatedSession,
         })
       );
+
+      // Fire-and-forget: past the threshold, condense the oldest messages
+      // into the session summary (never awaited in the response path).
+      if (storyMemory?.compactIfNeeded) {
+        storyMemory.compactIfNeeded({ userId, sessionId, turnCount: newTurnCount }).catch(() => {});
+      }
 
       res.json({
         sessionId,
@@ -375,6 +452,7 @@ module.exports = (app, deps) => {
           content: replyText,
         },
         scene,
+        ...(degraded ? { degraded: true } : {}),
         ...(sceneCompactionFailed || debug
           ? {
               sceneDebug: {

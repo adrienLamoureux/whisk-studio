@@ -143,7 +143,7 @@ export default function MasonrySection({ apiBaseUrl }) {
         <p
           style={{
             fontSize: 12,
-            color: "#ef4444",
+            color: "var(--skr-accent-danger)",
             background: "#fef2f2",
             padding: "6px 10px",
             borderRadius: 6,

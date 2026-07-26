@@ -143,7 +143,7 @@ export default function CharactersSection({ apiBaseUrl, imageModels = [], videoM
         <p
           style={{
             fontSize: 12,
-            color: "#ef4444",
+            color: "var(--skr-accent-danger)",
             background: "#fef2f2",
             padding: "6px 10px",
             borderRadius: 6,
@@ -300,7 +300,7 @@ export default function CharactersSection({ apiBaseUrl, imageModels = [], videoM
                           </button>
                           <button
                             className="skr-btn-secondary"
-                            style={{ fontSize: 11, color: "#ef4444" }}
+                            style={{ fontSize: 11, color: "var(--skr-accent-danger)" }}
                             onClick={() => handleDeleteChar(char)}
                             disabled={isDeleting || deletingCharId !== ""}
                           >

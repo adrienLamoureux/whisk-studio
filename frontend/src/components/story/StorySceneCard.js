@@ -158,7 +158,9 @@ export default function StorySceneCard({
         )}
 
         {scene.illustrationError && (
-          <span style={{ fontSize: 11, color: "#ef4444" }}>{scene.illustrationError}</span>
+          <span style={{ fontSize: 11, color: "var(--skr-accent-danger)" }}>
+            {scene.illustrationError}
+          </span>
         )}
       </div>
 

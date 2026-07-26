@@ -1,5 +1,5 @@
 /**
- * GenerationCard — inline image generation card rendered inside CompanionChat
+ * GenerationCard — inline image generation card rendered inside the companion side chat
  * when Hiyori detects a generation intent from the user's message.
  *
  * Shows the extracted prompt (editable), a Generate button (auth-gated),
