@@ -88,6 +88,7 @@ const {
 const { createCompanionMemory } = require("./companion-memory");
 const { createAgentMemory } = require("./agent-memory");
 const { createStoryMemory } = require("./story-memory");
+const { createJobStore } = require("./jobs");
 const { createAgentState } = require("./agent-state");
 const { createAgentRateLimit } = require("./agent-rate-limit");
 const { createAgentCost } = require("./agent-cost");
@@ -199,6 +200,12 @@ const createDeps = () => {
     InvokeModelCommand,
     promptHelperModelId,
     agentCost,
+  });
+
+  // One job record for every async generation, whatever the provider or kind.
+  const jobStore = createJobStore({
+    putMediaItem: mediaStore.putMediaItem,
+    queryMediaItems: mediaStore.queryMediaItems,
   });
 
   const agentState = createAgentState({ dynamoClient, mediaTable });
@@ -323,6 +330,7 @@ const createDeps = () => {
     companionMemory,
     agentMemory,
     storyMemory,
+    jobStore,
     agentState,
     agentRateLimit,
     agentCost,

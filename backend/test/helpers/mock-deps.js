@@ -80,6 +80,9 @@ const createMockDeps = (overrides = {}) => {
     compactIfNeeded: async () => {},
   };
 
+  const { createJobStore } = require("../../lib/jobs");
+  const jobStore = createJobStore(mediaStore);
+
   const agentState = {
     load: async () => null,
     patch: async () => {},
@@ -316,6 +319,7 @@ const createMockDeps = (overrides = {}) => {
     companionMemory,
     agentMemory,
     storyMemory,
+    jobStore,
     agentState,
     agentRateLimit,
     agentCost,
@@ -369,7 +373,16 @@ const createMockDeps = (overrides = {}) => {
     copyS3Object,
   };
 
-  return { ...base, ...overrides };
+  const merged = { ...base, ...overrides };
+  // jobStore must be built from the FINAL media-store functions, so a test
+  // that overrides queryMediaItems/putMediaItem also drives the job store.
+  if (!overrides.jobStore) {
+    merged.jobStore = createJobStore({
+      putMediaItem: merged.putMediaItem,
+      queryMediaItems: merged.queryMediaItems,
+    });
+  }
+  return merged;
 };
 
 module.exports = { createMockDeps };

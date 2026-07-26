@@ -10,6 +10,7 @@ const {
   buildSceneMusicPayload,
 } = require("./music-helpers");
 const { createPersistStorySceneMusic } = require("./music-recommendation");
+const { startSceneJob, findSceneJob, settleSceneJob } = require("./scene-jobs");
 
 module.exports = function registerStoryMusicRoutes(deps) {
   const {
@@ -125,6 +126,18 @@ module.exports = function registerStoryMusicRoutes(deps) {
           });
         }
 
+        // Scene music participates in the shared job feed like every other
+        // async generation, rather than hiding its state on the scene item.
+        const job = await startSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          kind: "music",
+          providerRef: prediction.id,
+          status: prediction.status,
+          sessionId,
+          sceneId,
+        });
+
         if (prediction.status === "succeeded") {
           const { updatedScene, musicKey, musicUrl, trackItem } = await persistStorySceneMusic({
             bucket,
@@ -137,10 +150,18 @@ module.exports = function registerStoryMusicRoutes(deps) {
             modelId: STORY_MUSIC_MODEL_ID,
             direction,
           });
+          await settleSceneJob({
+            jobStore: deps.jobStore,
+            userId,
+            job,
+            status: "succeeded",
+            result: { key: musicKey, url: musicUrl },
+          });
           return res.json({
             sceneId,
             modelId: STORY_MUSIC_MODEL_ID,
             predictionId: prediction.id,
+            jobId: job?.jobId || null,
             status: "succeeded",
             prompt,
             direction,
@@ -196,6 +217,7 @@ module.exports = function registerStoryMusicRoutes(deps) {
           sceneId,
           modelId: STORY_MUSIC_MODEL_ID,
           predictionId: prediction.id,
+          jobId: job?.jobId || null,
           status: prediction.status || "starting",
           prompt,
           direction,
@@ -281,6 +303,23 @@ module.exports = function registerStoryMusicRoutes(deps) {
           });
         }
 
+        // Mirror the provider's status onto the shared job record.
+        const trackedJob = await findSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          kind: "music",
+          providerRef: resolvedPredictionId,
+        });
+        await settleSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          job: trackedJob,
+          status: prediction.status,
+          ...(prediction.status === "failed" || prediction.status === "canceled"
+            ? { error: "music_failed" }
+            : {}),
+        });
+
         if (prediction.status !== "succeeded") {
           const updatedScene = {
             ...sceneItem,
@@ -329,6 +368,14 @@ module.exports = function registerStoryMusicRoutes(deps) {
           prompt: sceneItem.musicPrompt || DEFAULT_STORY_MUSIC_PROMPT,
           modelId: sceneItem.musicModelId || STORY_MUSIC_MODEL_ID,
           direction,
+        });
+
+        await settleSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          job: trackedJob,
+          status: "succeeded",
+          result: { key: musicKey, url: musicUrl },
         });
 
         return res.json({

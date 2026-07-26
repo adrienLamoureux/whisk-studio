@@ -1,4 +1,5 @@
 const registerCorePromptRoutes = require("./core-prompt");
+const registerJobsRoutes = require("./jobs-routes");
 const registerUserMediaRoutes = require("./media/user-media-routes");
 const registerUserVideoRoutes = require("./media/user-video-routes");
 const registerSharedMediaRoutes = require("./media/shared-media-routes");
@@ -30,6 +31,7 @@ const registerAgentSessionsRoute = require("./agent-sessions-route");
 
 const registerRoutes = (app, deps) => {
   registerCorePromptRoutes(app, deps);
+  app.use("/", registerJobsRoutes(deps));
   app.use("/", registerUserMediaRoutes(deps));
   app.use("/", registerUserVideoRoutes(deps));
   app.use("/", registerSharedMediaRoutes(deps));

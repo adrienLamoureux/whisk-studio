@@ -7,6 +7,7 @@ const {
   buildDataUrl,
 } = require("./illustration-helpers");
 const { getFlags } = require("../../lib/feature-flags");
+const { startSceneJob, findSceneJob, settleSceneJob } = require("./scene-jobs");
 
 module.exports = function registerStoryAnimationRoutes(deps) {
   const {
@@ -161,6 +162,18 @@ module.exports = function registerStoryAnimationRoutes(deps) {
           });
         }
 
+        // Story media records a JOB like plain image/video does, so in-flight
+        // scene work is visible to GET /jobs and the ops dashboard.
+        const job = await startSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          kind: "animation",
+          providerRef: prediction.id,
+          status: prediction.status,
+          sessionId,
+          sceneId,
+        });
+
         if (prediction.status === "succeeded") {
           const { videoKey, videoUrl } = await persistStorySceneVideo({
             bucket,
@@ -171,10 +184,18 @@ module.exports = function registerStoryAnimationRoutes(deps) {
             prediction,
             prompt,
           });
+          await settleSceneJob({
+            jobStore: deps.jobStore,
+            userId,
+            job,
+            status: "succeeded",
+            result: { key: videoKey, url: videoUrl },
+          });
           return res.json({
             sceneId,
             modelId: videoModelConfig.modelId,
             predictionId: prediction.id,
+            jobId: job?.jobId || null,
             status: "succeeded",
             prompt,
             videoKey,
@@ -202,6 +223,7 @@ module.exports = function registerStoryAnimationRoutes(deps) {
           sceneId,
           modelId: videoModelConfig.modelId,
           predictionId: prediction.id,
+          jobId: job?.jobId || null,
           status: prediction.status || "starting",
           prompt,
         });
@@ -284,6 +306,23 @@ module.exports = function registerStoryAnimationRoutes(deps) {
           });
         }
 
+        // Keep the shared job record in step with the provider's own status.
+        const trackedJob = await findSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          kind: "animation",
+          providerRef: resolvedPredictionId,
+        });
+        await settleSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          job: trackedJob,
+          status: prediction.status,
+          ...(prediction.status === "failed" || prediction.status === "canceled"
+            ? { error: "animation_failed" }
+            : {}),
+        });
+
         if (prediction.status !== "succeeded") {
           const updatedScene = {
             ...sceneItem,
@@ -316,6 +355,14 @@ module.exports = function registerStoryAnimationRoutes(deps) {
           sceneItem,
           prediction,
           prompt: sceneItem.videoPrompt || DEFAULT_STORY_ANIMATION_PROMPT,
+        });
+
+        await settleSceneJob({
+          jobStore: deps.jobStore,
+          userId,
+          job: trackedJob,
+          status: "succeeded",
+          result: { key: videoKey, url: videoUrl },
         });
 
         return res.json({

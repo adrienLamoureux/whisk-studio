@@ -8,7 +8,10 @@ const {
   isOpeningSceneItem,
   signSceneVideoUrl,
   signSceneMusicUrl,
+  buildStorySceneImageKey,
+  buildSceneResponse,
 } = require("./illustration-helpers");
+const { startSceneJob } = require("./scene-jobs");
 const {
   parseOptionalNumber,
   buildSceneMusicPayload,
@@ -194,22 +197,11 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
           videoKey: sceneItem.videoKey || "",
           videoUrl,
           ...buildSceneMusicPayload(parseOptionalNumber, sceneItem, musicUrl),
-          scene: {
-            sceneId: sceneItem.sceneId,
-            title: sceneItem.title,
-            description: sceneItem.description,
-            prompt: sceneItem.prompt,
-            sceneEnvironment: sceneItem.sceneEnvironment,
-            sceneAction: sceneItem.sceneAction,
-            status: sceneItem.status,
-            videoKey: sceneItem.videoKey || "",
+          scene: buildSceneResponse({
+            scene: sceneItem,
+            musicPayload: buildSceneMusicPayload(parseOptionalNumber, sceneItem, musicUrl),
             videoUrl,
-            videoStatus: sceneItem.videoStatus || "",
-            videoPredictionId: sceneItem.videoPredictionId || "",
-            videoPrompt: sceneItem.videoPrompt || "",
-            ...buildSceneMusicPayload(parseOptionalNumber, sceneItem, musicUrl),
-            createdAt: sceneItem.createdAt,
-          },
+          }),
         });
       }
 
@@ -365,8 +357,7 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
 
       const { buffer, contentType } = await fetchImageBuffer(imageUrl);
       const imageKey =
-        sceneItem.imageKey ||
-        `${buildUserPrefix(userId)}stories/${sessionId}/scenes/${sceneId}.png`;
+        sceneItem.imageKey || buildStorySceneImageKey(buildUserPrefix, userId, sessionId, sceneId);
       await s3Client.send(
         new PutObjectCommand({
           Bucket: bucket,
@@ -414,28 +405,27 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
         bucket,
         updatedScene
       );
+      // Illustration runs synchronously, so its job is recorded already
+      // settled — it still belongs in the shared feed for history and ops.
+      await startSceneJob({
+        jobStore: deps.jobStore,
+        userId,
+        kind: "illustration",
+        providerRef: sceneId,
+        status: "succeeded",
+        sessionId,
+        sceneId,
+      });
 
       res.json({
         sceneId,
         imageKey,
         imageUrl: signedUrl,
         ...buildSceneMusicPayload(parseOptionalNumber, updatedScene, musicUrl),
-        scene: {
-          sceneId: updatedScene.sceneId,
-          title: updatedScene.title,
-          description: updatedScene.description,
-          prompt: updatedScene.prompt,
-          sceneEnvironment: updatedScene.sceneEnvironment,
-          sceneAction: updatedScene.sceneAction,
-          status: updatedScene.status,
-          videoKey: updatedScene.videoKey || "",
-          videoUrl: "",
-          videoStatus: updatedScene.videoStatus || "",
-          videoPredictionId: updatedScene.videoPredictionId || "",
-          videoPrompt: updatedScene.videoPrompt || "",
-          ...buildSceneMusicPayload(parseOptionalNumber, updatedScene, musicUrl),
-          createdAt: updatedScene.createdAt,
-        },
+        scene: buildSceneResponse({
+          scene: updatedScene,
+          musicPayload: buildSceneMusicPayload(parseOptionalNumber, updatedScene, musicUrl),
+        }),
         ...(debug
           ? {
               prompt: {

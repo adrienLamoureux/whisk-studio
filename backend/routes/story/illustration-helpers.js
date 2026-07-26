@@ -99,6 +99,33 @@ const signSceneMusicUrl = async (
 const buildStorySceneVideoKey = (buildUserPrefix, userId = "", sessionId = "", sceneId = "") =>
   `${buildUserPrefix(userId)}stories/${sessionId}/scenes/${sceneId}.mp4`;
 
+// Sibling of the video/music key builders — this one used to be inlined in
+// illustration-routes.js, which is why the three diverged.
+const buildStorySceneImageKey = (buildUserPrefix, userId = "", sessionId = "", sceneId = "") =>
+  `${buildUserPrefix(userId)}stories/${sessionId}/scenes/${sceneId}.png`;
+
+/**
+ * The `scene` object every illustration response returns. Previously written
+ * out twice in illustration-routes.js (cached hit + fresh render), which is
+ * how the two copies drifted apart.
+ */
+const buildSceneResponse = ({ scene, musicPayload = {}, videoUrl = "" }) => ({
+  sceneId: scene.sceneId,
+  title: scene.title,
+  description: scene.description,
+  prompt: scene.prompt,
+  sceneEnvironment: scene.sceneEnvironment,
+  sceneAction: scene.sceneAction,
+  status: scene.status,
+  videoKey: scene.videoKey || "",
+  videoUrl,
+  videoStatus: scene.videoStatus || "",
+  videoPredictionId: scene.videoPredictionId || "",
+  videoPrompt: scene.videoPrompt || "",
+  ...musicPayload,
+  createdAt: scene.createdAt,
+});
+
 const buildDataUrl = ({ buffer, contentType }) =>
   `data:${contentType || "image/png"};base64,${buffer.toString("base64")}`;
 
@@ -123,5 +150,7 @@ module.exports = {
   signSceneVideoUrl,
   signSceneMusicUrl,
   buildStorySceneVideoKey,
+  buildStorySceneImageKey,
+  buildSceneResponse,
   buildDataUrl,
 };
