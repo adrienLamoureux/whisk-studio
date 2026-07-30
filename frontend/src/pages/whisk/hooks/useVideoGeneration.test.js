@@ -9,9 +9,13 @@ jest.mock("../../../services/replicate", () => ({
   generateReplicateVideo: jest.fn(),
   getReplicateVideoStatus: jest.fn(),
 }));
+jest.mock("../../../services/jobs", () => ({
+  listActiveJobs: jest.fn().mockResolvedValue({ jobs: [] }),
+}));
 
 import { generateReplicateVideo, getReplicateVideoStatus } from "../../../services/replicate";
-import { saveJob, loadJob } from "../../../lib/polling/jobStore";
+import { getNovaReelJobStatus } from "../../../services/bedrock";
+import { listActiveJobs } from "../../../services/jobs";
 
 function makeProps(overrides = {}) {
   return {
@@ -30,19 +34,18 @@ function makeProps(overrides = {}) {
   };
 }
 
-describe("useVideoGeneration — job persistence & resume", () => {
+describe("useVideoGeneration — resume from the shared job feed", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    window.sessionStorage.clear();
+    listActiveJobs.mockResolvedValue({ jobs: [] });
   });
 
   afterEach(() => {
-    window.sessionStorage.clear();
     jest.useRealTimers();
   });
 
-  it("persists a replicate job descriptor on submit", async () => {
+  it("submits without storing anything client-side", async () => {
     generateReplicateVideo.mockResolvedValueOnce({ predictionId: "vp-1", status: "starting" });
     getReplicateVideoStatus.mockResolvedValue({ status: "processing" });
 
@@ -54,19 +57,26 @@ describe("useVideoGeneration — job persistence & resume", () => {
     });
 
     expect(props.onSubmitted).toHaveBeenCalled();
-    expect(loadJob("video-replicate")).toMatchObject({
-      predictionId: "vp-1",
-      inputKey: "images/foo.jpg",
-    });
   });
 
-  it("resumes a persisted replicate job on mount and completes it", async () => {
-    saveJob("video-replicate", { predictionId: "vp-9", inputKey: "images/foo.jpg" });
+  it("resumes a replicate video reported by the server feed", async () => {
+    listActiveJobs.mockResolvedValue({
+      jobs: [
+        {
+          jobId: "job-v",
+          kind: "video",
+          provider: "replicate",
+          status: "running",
+          poll: { predictionId: "vp-9", inputKey: "images/foo.jpg", characterId: "" },
+        },
+      ],
+    });
     getReplicateVideoStatus.mockResolvedValue({ status: "succeeded" });
 
     const props = makeProps();
     renderHook(() => useVideoGeneration(props));
 
+    await act(async () => {});
     await act(async () => {
       jest.advanceTimersByTime(0);
     });
@@ -76,22 +86,61 @@ describe("useVideoGeneration — job persistence & resume", () => {
       expect.objectContaining({ predictionId: "vp-9" })
     );
     expect(props.onCompleted).toHaveBeenCalled();
-    expect(loadJob("video-replicate")).toBeNull();
   });
 
-  it("clears the job and reports the error when the poll reports failure", async () => {
-    saveJob("video-replicate", { predictionId: "vp-9", inputKey: "images/foo.jpg" });
+  it("resumes a bedrock video via its invocationArn", async () => {
+    listActiveJobs.mockResolvedValue({
+      jobs: [
+        {
+          jobId: "job-b",
+          kind: "video",
+          provider: "bedrock",
+          status: "running",
+          providerRef: "arn:x",
+          poll: { invocationArn: "arn:x", inputKey: "images/foo.jpg", outputPrefix: "out/" },
+        },
+      ],
+    });
+    getNovaReelJobStatus.mockResolvedValue({ status: "Completed" });
+
+    const props = makeProps();
+    renderHook(() => useVideoGeneration(props));
+
+    await act(async () => {});
+    await act(async () => {
+      jest.advanceTimersByTime(0);
+    });
+
+    expect(getNovaReelJobStatus).toHaveBeenCalledWith(
+      "https://api.example.com",
+      expect.objectContaining({ invocationArn: "arn:x" })
+    );
+    expect(props.onCompleted).toHaveBeenCalled();
+  });
+
+  it("reports failure from a resumed job", async () => {
+    listActiveJobs.mockResolvedValue({
+      jobs: [
+        {
+          jobId: "job-v",
+          kind: "video",
+          provider: "replicate",
+          status: "running",
+          poll: { predictionId: "vp-9", inputKey: "images/foo.jpg" },
+        },
+      ],
+    });
     getReplicateVideoStatus.mockResolvedValue({ status: "failed" });
 
     const props = makeProps();
     renderHook(() => useVideoGeneration(props));
 
+    await act(async () => {});
     await act(async () => {
       jest.advanceTimersByTime(0);
     });
 
     expect(props.onError).toHaveBeenCalledWith("Video generation failed.");
     expect(props.onCompleted).not.toHaveBeenCalled();
-    expect(loadJob("video-replicate")).toBeNull();
   });
 });

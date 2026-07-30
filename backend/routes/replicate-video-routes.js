@@ -242,6 +242,7 @@ module.exports = (app, deps) => {
             predictionId: prediction.id,
             inputKey,
             characterId,
+            poll: { predictionId: prediction.id, inputKey, characterId },
             status: "completed",
             progressPct: 100,
             etaSeconds: 0,
@@ -271,6 +272,9 @@ module.exports = (app, deps) => {
           predictionId: prediction.id,
           inputKey,
           characterId,
+          // Everything /replicate/video/status needs, so the job can be
+          // resumed from the shared feed after a reload.
+          poll: { predictionId: prediction.id, inputKey, characterId },
           status: prediction.status,
           progressPct: prediction.status === "starting" ? 24 : 52,
           etaSeconds: 90,

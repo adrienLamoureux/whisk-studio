@@ -267,6 +267,9 @@ module.exports = (app, deps) => {
               imageName,
               batchId,
               characterId,
+              // Everything /replicate/image/status needs, so the job can be
+              // resumed from the shared feed after a reload.
+              poll: { predictionId: prediction.id, imageName, batchId, prompt, negativePrompt },
               status: prediction.status,
               progressPct: prediction.status === "starting" ? 18 : 42,
               etaSeconds: 75,

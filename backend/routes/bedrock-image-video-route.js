@@ -161,11 +161,24 @@ module.exports = (app, deps) => {
       });
       const response = await bedrockClient.send(command);
 
+      // Bedrock video was the one async generation that recorded no job, so a
+      // reload lost it entirely. It now joins the shared feed like the rest;
+      // `poll` carries what /bedrock/nova-reel/job-status needs to resume.
+      const job = await deps.jobStore?.createJob({
+        userId,
+        kind: "video",
+        provider: "bedrock",
+        providerRef: response?.invocationArn || "",
+        status: "running",
+        meta: { poll: { invocationArn: response?.invocationArn || "", inputKey, outputPrefix } },
+      });
+
       res.json({
         modelId,
         inputS3Uri,
         outputS3Uri,
         outputPrefix,
+        jobId: job?.jobId || null,
         response,
       });
     } catch (error) {

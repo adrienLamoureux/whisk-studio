@@ -8,10 +8,9 @@ import { putFileToUrl, requestImageUploadUrl } from "../../../services/s3";
 import { buildSafeFileName } from "../../../utils/fileName";
 import { useNotify } from "../../../components/sakura/NotificationStack";
 import createPoller, { formatElapsedLabel } from "../../../lib/polling/createPoller";
-import { loadJob, saveJob, clearJob } from "../../../lib/polling/jobStore";
+import useResumableJob from "../../../lib/polling/useResumableJob";
 import { CIVITAI_LORA_MODE_QUICK, CIVITAI_RUNTIME_PROFILE_ID } from "./image-studio-constants";
 
-const IMAGE_JOB_SLOT = "image";
 const IMAGE_POLL_INTERVAL_MS = 2500;
 const IMAGE_POLL_MAX_ATTEMPTS = 240; // ~10 minutes
 
@@ -135,9 +134,7 @@ export const useImageGeneration = ({
     const label = provider === "civitai" ? "CivitAI" : "Replicate";
     const fetchStatus = provider === "civitai" ? getCivitaiImageStatus : getReplicateImageStatus;
     clearReplicatePoll();
-    saveJob(IMAGE_JOB_SLOT, { provider, params });
     const finishError = (message) => {
-      clearJob(IMAGE_JOB_SLOT);
       setImageGenerationStatus("error");
       onError?.(message);
       notify?.(message, "error");
@@ -153,14 +150,12 @@ export const useImageGeneration = ({
         } catch (error) {
           if (error?.status === 401) {
             // Session expired — AuthExpiryNotice handles the messaging.
-            clearJob(IMAGE_JOB_SLOT);
             setImageGenerationStatus("idle");
             return true;
           }
           throw error;
         }
         if (data?.status === "succeeded") {
-          clearJob(IMAGE_JOB_SLOT);
           setImageGenerationNotice(data?.notice || "");
           setImageGenerationStatus("success");
           notify?.("Image generation finished.", "success");
@@ -188,19 +183,24 @@ export const useImageGeneration = ({
     poller.start();
   };
 
-  // Resume a generation left in flight by navigation: the poll dies with the
-  // component, but the job descriptor survives in sessionStorage.
+  // Resume a generation left in flight by navigation or a reload. The server
+  // knows what is running and each job carries its own poll recipe, so
+  // nothing is stored client-side.
   const startImagePollingRef = useRef(null);
   startImagePollingRef.current = startImagePolling;
-  useEffect(() => {
-    if (!apiBaseUrl) return;
-    if (replicatePollRef.current) return;
-    const job = loadJob(IMAGE_JOB_SLOT);
-    if (!job?.provider || !job?.params) return;
-    setImageGenerationStatus("loading");
-    setImageGenerationNotice("Resuming image generation check...");
-    startImagePollingRef.current?.({ provider: job.provider, params: job.params });
-  }, [apiBaseUrl]);
+  useResumableJob({
+    apiBaseUrl,
+    kind: "image",
+    enabled: !replicatePollRef.current,
+    onResume: (job) => {
+      setImageGenerationStatus("loading");
+      setImageGenerationNotice("Resuming image generation check...");
+      startImagePollingRef.current?.({
+        provider: job.provider === "civitai" ? "civitai" : "replicate",
+        params: job.poll,
+      });
+    },
+  });
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
@@ -389,8 +389,6 @@ export const useImageGeneration = ({
     setUploadKey("");
     setUploadStatus("idle");
     clearReplicatePoll();
-    // Explicit reset abandons the job — don't resurrect it on remount.
-    clearJob(IMAGE_JOB_SLOT);
   };
 
   const imageUploadProps = {

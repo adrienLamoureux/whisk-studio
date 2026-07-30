@@ -3,10 +3,8 @@ import { generateNovaReelVideo, getNovaReelJobStatus } from "../../../services/b
 import { generateReplicateVideo, getReplicateVideoStatus } from "../../../services/replicate";
 import { useNotify } from "../../../components/sakura/NotificationStack";
 import createPoller, { formatElapsedLabel } from "../../../lib/polling/createPoller";
-import { loadJob, saveJob, clearJob } from "../../../lib/polling/jobStore";
+import useResumableJob from "../../../lib/polling/useResumableJob";
 
-const VIDEO_BEDROCK_JOB_SLOT = "video-bedrock";
-const VIDEO_REPLICATE_JOB_SLOT = "video-replicate";
 const VIDEO_POLL_INTERVAL_MS = 5000;
 const VIDEO_POLL_MAX_ATTEMPTS = 240; // ~20 minutes
 
@@ -217,11 +215,6 @@ export const useVideoGeneration = ({
           setReplicateJobStatus(data.status || "starting");
           setReplicateInputKey(resolvedInputKey);
           setReplicateCharacterId(selectedLoraProfileId || "");
-          saveJob(VIDEO_REPLICATE_JOB_SLOT, {
-            predictionId: data.predictionId,
-            inputKey: resolvedInputKey,
-            characterId: selectedLoraProfileId || "",
-          });
         } else {
           setGenerationStatus("success");
           notify?.("Video generation finished.", "success");
@@ -241,11 +234,6 @@ export const useVideoGeneration = ({
         setOutputPrefix(resolvedPrefix);
         setBedrockInputKey(resolvedInputKey);
         if (resolvedArn) {
-          saveJob(VIDEO_BEDROCK_JOB_SLOT, {
-            invocationArn: resolvedArn,
-            outputPrefix: resolvedPrefix,
-            inputKey: resolvedInputKey,
-          });
         }
         onSubmitted?.();
       }
@@ -274,7 +262,6 @@ export const useVideoGeneration = ({
         } catch (error) {
           if (error?.status === 401) {
             // Session expired — AuthExpiryNotice handles the messaging.
-            clearJob(VIDEO_BEDROCK_JOB_SLOT);
             setVideoJobNotice("");
             return true;
           }
@@ -283,14 +270,12 @@ export const useVideoGeneration = ({
         const statusValue = data?.status || "";
         setJobStatus(statusValue);
         if (statusValue === "Completed") {
-          clearJob(VIDEO_BEDROCK_JOB_SLOT);
           setVideoJobNotice("");
           notify?.("Video generation finished.", "success");
           onCompletedRef.current?.();
           return true;
         }
         if (statusValue === "Failed") {
-          clearJob(VIDEO_BEDROCK_JOB_SLOT);
           setVideoJobNotice("");
           onErrorRef.current?.("Video generation failed.");
           notify?.("Video generation failed.", "error");
@@ -300,7 +285,6 @@ export const useVideoGeneration = ({
         return false;
       },
       onExhausted: (reason) => {
-        clearJob(VIDEO_BEDROCK_JOB_SLOT);
         setVideoJobNotice("");
         const message =
           reason === "attempts"
@@ -339,7 +323,6 @@ export const useVideoGeneration = ({
           });
         } catch (error) {
           if (error?.status === 401) {
-            clearJob(VIDEO_REPLICATE_JOB_SLOT);
             setVideoJobNotice("");
             return true;
           }
@@ -348,7 +331,6 @@ export const useVideoGeneration = ({
         const statusValue = data?.status || "";
         setReplicateJobStatus(statusValue);
         if (statusValue === "succeeded") {
-          clearJob(VIDEO_REPLICATE_JOB_SLOT);
           setVideoJobNotice("");
           setGenerationStatus("success");
           notify?.("Video generation finished.", "success");
@@ -356,7 +338,6 @@ export const useVideoGeneration = ({
           return true;
         }
         if (statusValue === "failed" || statusValue === "canceled") {
-          clearJob(VIDEO_REPLICATE_JOB_SLOT);
           setVideoJobNotice("");
           setGenerationStatus("error");
           onErrorRef.current?.("Video generation failed.");
@@ -367,7 +348,6 @@ export const useVideoGeneration = ({
         return false;
       },
       onExhausted: (reason) => {
-        clearJob(VIDEO_REPLICATE_JOB_SLOT);
         setVideoJobNotice("");
         const message =
           reason === "attempts"
@@ -389,27 +369,28 @@ export const useVideoGeneration = ({
     notify,
   ]);
 
-  // Resume video jobs left in flight by navigation — restoring the stored
-  // identifiers re-arms the poll effects above.
-  useEffect(() => {
-    if (!apiBaseUrl) return;
-    const bedrockJob = loadJob(VIDEO_BEDROCK_JOB_SLOT);
-    if (bedrockJob?.invocationArn && !invocationArn) {
-      setJobStatus("InProgress");
+  // Resume a video left in flight by navigation or a reload. The server feed
+  // is the source of truth for what is running; restoring the identifiers
+  // re-arms the poll effects above.
+  useResumableJob({
+    apiBaseUrl,
+    kind: "video",
+    enabled: !invocationArn && !replicatePredictionId,
+    onResume: (job) => {
       setVideoJobNotice("Resuming video job check...");
-      setBedrockInputKey(bedrockJob.inputKey || "");
-      setOutputPrefix(bedrockJob.outputPrefix || "");
-      setInvocationArn(bedrockJob.invocationArn);
-    }
-    const replicateJob = loadJob(VIDEO_REPLICATE_JOB_SLOT);
-    if (replicateJob?.predictionId && !replicatePredictionId) {
-      setReplicateJobStatus("processing");
-      setVideoJobNotice("Resuming video job check...");
-      setReplicateInputKey(replicateJob.inputKey || "");
-      setReplicateCharacterId(replicateJob.characterId || "");
-      setReplicatePredictionId(replicateJob.predictionId);
-    }
-  }, [apiBaseUrl, invocationArn, replicatePredictionId]);
+      if (job.provider === "bedrock") {
+        setJobStatus("InProgress");
+        setBedrockInputKey(job.poll.inputKey || "");
+        setOutputPrefix(job.poll.outputPrefix || "");
+        setInvocationArn(job.poll.invocationArn || job.providerRef);
+      } else {
+        setReplicateJobStatus("processing");
+        setReplicateInputKey(job.poll.inputKey || "");
+        setReplicateCharacterId(job.poll.characterId || "");
+        setReplicatePredictionId(job.poll.predictionId || job.providerRef);
+      }
+    },
+  });
 
   return {
     videoProvider,

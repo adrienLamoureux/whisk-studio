@@ -11,6 +11,7 @@ import { useConfig } from "../../../contexts/ConfigContext";
 import { useAgent } from "../../../lib/agent/AgentContext";
 import { useCompanion, CompanionActions } from "../../../lib/companion/CompanionContext";
 import { getReplicateImageStatus } from "../../../services/replicate";
+import createPoller from "../../../lib/polling/createPoller";
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLLS = 40; // ~2 minutes
@@ -48,18 +49,16 @@ export default function ToolResultPanel({ turn }) {
       return undefined;
     }
 
-    let polls = 0;
-    const tick = async () => {
-      if (cancelledRef.current) return;
-      if (polls >= MAX_POLLS) {
-        setStatus("failed");
-        setError("Generation timed out.");
-        dispatch(CompanionActions.GENERATION_ERROR, { type: "image", error: "timeout" });
-        return;
-      }
-      polls += 1;
-
-      try {
+    // Shared poller: bounded attempts + bounded consecutive errors, the same
+    // primitive the Atelier hooks use. This used to be a hand-rolled
+    // setTimeout loop duplicating GenerationCard's.
+    const poller = createPoller({
+      immediate: true,
+      intervalMs: POLL_INTERVAL_MS,
+      maxAttempts: MAX_POLLS,
+      maxConsecutiveErrors: 3,
+      task: async () => {
+        if (cancelledRef.current) return true;
         const data = await getReplicateImageStatus(apiBaseUrl, {
           predictionId: payload.predictionId,
           imageName: payload.imageName,
@@ -67,34 +66,38 @@ export default function ToolResultPanel({ turn }) {
           prompt: payload.prompt || "",
           negativePrompt: payload.negativePrompt || "",
         });
-        if (cancelledRef.current) return;
-
+        if (cancelledRef.current) return true;
         if (data?.status === "succeeded" && data?.images?.length > 0) {
           setImageUrl(data.images[0].url);
           setStatus("succeeded");
           dispatch(CompanionActions.GENERATION_DONE, { type: "image", success: true });
-          return;
+          return true;
         }
         if (data?.status === "failed" || data?.status === "canceled") {
           setStatus("failed");
           setError(data?.error || "Generation failed.");
           dispatch(CompanionActions.GENERATION_ERROR, { type: "image", error: data?.error });
-          return;
+          return true;
         }
         setStatus(data?.status || "processing");
-        pollRef.current = setTimeout(tick, POLL_INTERVAL_MS);
-      } catch (err) {
+        return false;
+      },
+      onExhausted: (reason, err) => {
         if (cancelledRef.current) return;
         setStatus("failed");
-        setError(err?.message || "Network error");
-        dispatch(CompanionActions.GENERATION_ERROR, { type: "image", error: err?.message });
-      }
-    };
+        setError(reason === "attempts" ? "Generation timed out." : err?.message || "Network error");
+        dispatch(CompanionActions.GENERATION_ERROR, {
+          type: "image",
+          error: reason === "attempts" ? "timeout" : err?.message,
+        });
+      },
+    });
+    pollRef.current = poller;
+    poller.start();
 
-    tick();
     return () => {
       cancelledRef.current = true;
-      if (pollRef.current) clearTimeout(pollRef.current);
+      poller.stop();
     };
     // Poll once per mount; stable identifiers come from payload.predictionId.
     // eslint-disable-next-line react-hooks/exhaustive-deps

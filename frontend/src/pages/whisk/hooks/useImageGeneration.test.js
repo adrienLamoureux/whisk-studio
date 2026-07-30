@@ -23,10 +23,13 @@ jest.mock("../../../services/s3", () => ({
   putFileToUrl: jest.fn(),
   requestImageUploadUrl: jest.fn(),
 }));
+jest.mock("../../../services/jobs", () => ({
+  listActiveJobs: jest.fn().mockResolvedValue({ jobs: [] }),
+}));
 
 import { generateReplicateImage, getReplicateImageStatus } from "../../../services/replicate";
 import { generateBedrockImage } from "../../../services/bedrock";
-import { saveJob, loadJob } from "../../../lib/polling/jobStore";
+import { listActiveJobs } from "../../../services/jobs";
 
 // Minimal default props for the hook
 function makeProps(overrides = {}) {
@@ -230,18 +233,17 @@ describe("useImageGeneration — validation guards", () => {
   });
 });
 
-describe("useImageGeneration — job persistence & resume", () => {
+describe("useImageGeneration — resume from the shared job feed", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    window.sessionStorage.clear();
+    listActiveJobs.mockResolvedValue({ jobs: [] });
   });
 
   afterEach(() => {
-    window.sessionStorage.clear();
     jest.useRealTimers();
   });
 
-  it("persists a job descriptor when async generation starts polling", async () => {
+  it("starts polling without storing anything client-side", async () => {
     generateReplicateImage.mockResolvedValueOnce({
       predictionId: "pred-1",
       status: "processing",
@@ -255,30 +257,28 @@ describe("useImageGeneration — job persistence & resume", () => {
     });
 
     expect(result.current.imageGenerationStatus).toBe("loading");
-    expect(loadJob("image")).toMatchObject({
-      provider: "replicate",
-      params: expect.objectContaining({ predictionId: "pred-1" }),
-    });
   });
 
-  it("resumes a persisted in-flight job on mount and completes it", async () => {
+  it("resumes an in-flight job reported by the server and completes it", async () => {
     jest.useFakeTimers();
-    saveJob("image", {
-      provider: "replicate",
-      params: {
-        predictionId: "pred-9",
-        batchId: "b1",
-        imageName: "n",
-        prompt: "p",
-        negativePrompt: "",
-      },
+    listActiveJobs.mockResolvedValue({
+      jobs: [
+        {
+          jobId: "job-1",
+          kind: "image",
+          provider: "replicate",
+          status: "running",
+          poll: { predictionId: "pred-9", imageName: "n", batchId: "b1" },
+        },
+      ],
     });
     getReplicateImageStatus.mockResolvedValue({ status: "succeeded", notice: "" });
 
     const props = makeProps();
     const { result } = renderHook(() => useImageGeneration(props));
-    expect(result.current.imageGenerationStatus).toBe("loading");
 
+    // Let the feed request settle, then advance to the first poll tick.
+    await act(async () => {});
     await act(async () => {
       jest.advanceTimersByTime(2500);
     });
@@ -289,27 +289,18 @@ describe("useImageGeneration — job persistence & resume", () => {
     );
     expect(result.current.imageGenerationStatus).toBe("success");
     expect(props.onGenerationComplete).toHaveBeenCalled();
-    expect(loadJob("image")).toBeNull();
   });
 
-  it("clears the job and errors out when the poll reports failure", async () => {
-    jest.useFakeTimers();
-    saveJob("image", {
-      provider: "replicate",
-      params: { predictionId: "pred-9" },
-    });
-    getReplicateImageStatus.mockResolvedValue({ status: "failed", error: "GPU exploded" });
-
-    const props = makeProps();
-    const { result } = renderHook(() => useImageGeneration(props));
-
-    await act(async () => {
-      jest.advanceTimersByTime(2500);
+  it("ignores jobs of other kinds", async () => {
+    listActiveJobs.mockResolvedValue({
+      jobs: [{ jobId: "v1", kind: "video", provider: "replicate", poll: { predictionId: "x" } }],
     });
 
-    expect(result.current.imageGenerationStatus).toBe("error");
-    expect(props.onError).toHaveBeenCalledWith("GPU exploded");
-    expect(loadJob("image")).toBeNull();
+    const { result } = renderHook(() => useImageGeneration(makeProps()));
+    await act(async () => {});
+
+    expect(getReplicateImageStatus).not.toHaveBeenCalled();
+    expect(result.current.imageGenerationStatus).toBe("idle");
   });
 });
 

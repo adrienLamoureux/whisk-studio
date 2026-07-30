@@ -67,6 +67,9 @@ const normalizeJobItem = (item = {}) => ({
   progressPct: typeof item.progressPct === "number" ? item.progressPct : null,
   etaSeconds: typeof item.etaSeconds === "number" ? item.etaSeconds : null,
   parent: item.parent || null,
+  // The parameters this job's status endpoint needs, so a client that just
+  // loaded the page can resume polling without having stored anything.
+  poll: item.poll || null,
   result: item.result || null,
   error: item.error || null,
   startedAt: item.startedAt || item.createdAt || null,

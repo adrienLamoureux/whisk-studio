@@ -6,7 +6,8 @@
  * and inline progress/result display.
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import createPoller from "../../../lib/polling/createPoller";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useConfig } from "../../../contexts/ConfigContext";
 import { useCompanion, CompanionActions } from "../../../lib/companion/CompanionContext";
@@ -27,6 +28,10 @@ export default function GenerationCard({ generation }) {
   const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
   const pollRef = useRef(null);
+
+  // The old hand-rolled loop never cleaned up, so a card unmounted mid-poll
+  // kept polling for up to two minutes.
+  useEffect(() => () => pollRef.current?.stop(), []);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || status === "generating" || status === "polling") return;
@@ -57,49 +62,46 @@ export default function GenerationCard({ generation }) {
       // Async result — need to poll
       if (data.predictionId) {
         setStatus("polling");
-        let polls = 0;
-
-        const poll = async () => {
-          if (polls >= MAX_POLLS) {
-            setStatus("error");
-            setError("Generation timed out.");
-            dispatch(CompanionActions.GENERATION_ERROR, { type: "image", error: "timeout" });
-            return;
-          }
-          polls += 1;
-
-          try {
+        // Shared poller — this was a hand-rolled setTimeout loop duplicating
+        // ToolResultPanel's, against the same status endpoint.
+        const poller = createPoller({
+          intervalMs: POLL_INTERVAL_MS,
+          maxAttempts: MAX_POLLS,
+          maxConsecutiveErrors: 3,
+          task: async () => {
             const statusData = await getReplicateImageStatus(apiBaseUrl, {
               predictionId: data.predictionId,
               imageName: `companion-${Date.now()}`,
               batchId: data.batchId || "",
               prompt: prompt.trim(),
             });
-
             if (statusData.status === "succeeded" && statusData.images?.length > 0) {
               setResultUrl(statusData.images[0].url);
               setStatus("done");
               dispatch(CompanionActions.GENERATION_DONE, { type: "image", success: true });
-              return;
+              return true;
             }
-
             if (statusData.status === "failed" || statusData.status === "canceled") {
               setStatus("error");
               setError("Generation failed.");
               dispatch(CompanionActions.GENERATION_ERROR, { type: "image", error: "failed" });
-              return;
+              return true;
             }
-
-            // Still processing — poll again
-            pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
-          } catch {
+            return false;
+          },
+          onExhausted: (reason) => {
             setStatus("error");
-            setError("Could not check generation status.");
-            dispatch(CompanionActions.GENERATION_ERROR, { type: "image", error: "poll_failed" });
-          }
-        };
-
-        pollRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+            setError(
+              reason === "attempts" ? "Generation timed out." : "Could not check generation status."
+            );
+            dispatch(CompanionActions.GENERATION_ERROR, {
+              type: "image",
+              error: reason === "attempts" ? "timeout" : "poll_failed",
+            });
+          },
+        });
+        pollRef.current = poller;
+        poller.start();
         return;
       }
 
