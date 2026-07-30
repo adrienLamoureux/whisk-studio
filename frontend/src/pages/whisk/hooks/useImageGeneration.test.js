@@ -278,7 +278,10 @@ describe("useImageGeneration — resume from the shared job feed", () => {
     const { result } = renderHook(() => useImageGeneration(props));
 
     // Let the feed request settle, then advance to the first poll tick.
-    await act(async () => {});
+    // Flush the microtask queue so the job-feed request settles.
+    await act(async () => {
+      await Promise.resolve();
+    });
     await act(async () => {
       jest.advanceTimersByTime(2500);
     });
@@ -297,7 +300,10 @@ describe("useImageGeneration — resume from the shared job feed", () => {
     });
 
     const { result } = renderHook(() => useImageGeneration(makeProps()));
-    await act(async () => {});
+    // Flush the microtask queue so the job-feed request settles.
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(getReplicateImageStatus).not.toHaveBeenCalled();
     expect(result.current.imageGenerationStatus).toBe("idle");

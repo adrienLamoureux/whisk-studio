@@ -76,7 +76,10 @@ describe("useVideoGeneration — resume from the shared job feed", () => {
     const props = makeProps();
     renderHook(() => useVideoGeneration(props));
 
-    await act(async () => {});
+    // Flush the microtask queue so the job-feed request settles.
+    await act(async () => {
+      await Promise.resolve();
+    });
     await act(async () => {
       jest.advanceTimersByTime(0);
     });
@@ -106,7 +109,10 @@ describe("useVideoGeneration — resume from the shared job feed", () => {
     const props = makeProps();
     renderHook(() => useVideoGeneration(props));
 
-    await act(async () => {});
+    // Flush the microtask queue so the job-feed request settles.
+    await act(async () => {
+      await Promise.resolve();
+    });
     await act(async () => {
       jest.advanceTimersByTime(0);
     });
@@ -135,7 +141,10 @@ describe("useVideoGeneration — resume from the shared job feed", () => {
     const props = makeProps();
     renderHook(() => useVideoGeneration(props));
 
-    await act(async () => {});
+    // Flush the microtask queue so the job-feed request settles.
+    await act(async () => {
+      await Promise.resolve();
+    });
     await act(async () => {
       jest.advanceTimersByTime(0);
     });
