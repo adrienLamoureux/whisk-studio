@@ -1,4 +1,4 @@
-# Codex Collaboration Instructions
+# Agent Collaboration Instructions
 
 > Last updated: 2026-11-04
 
@@ -38,7 +38,7 @@ There are no design variants or per-idea worktrees — one codebase, one stack. 
 
 See `IDEAS.md` for the authoritative auto-maintained registry of all deployed stacks (CloudFront URLs, API endpoints, statuses).
 
-Shared test credentials for the live stacks: `test@test.com` / `Test1234567@`
+Test user for the live stack: `test@test.com`; the password is not committed (rotated 2026-11-04). Read it from the owner's macOS Keychain: `security find-generic-password -s whisk-studio-dev-test-user -w`. Never commit credentials.
 
 ## Read Order For Agents
 1. `AGENTS.md` (this file — rules + repo reality)
