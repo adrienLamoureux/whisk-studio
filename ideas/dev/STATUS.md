@@ -5,12 +5,12 @@
 - Stage: `dev`
 - Created at: `2026-03-18T08:19:07.943Z`
 - Current status: `LIVE`
-- Active worktree: `/Users/adrienlamoureux/Documents/code/static-web-aws-ai`
+- Active worktree: `~/Documents/code/whisk-studio`
 - Active branch: `main`
 - CloudFront URL: `https://d2l9b1xmucsb19.cloudfront.net`
 - API Endpoint: `https://k002t5i8r9.execute-api.us-east-1.amazonaws.com/prod/`
 - Cognito domain: `https://whiskstudio-alx-dev-761593662432.auth.us-east-1.amazoncognito.com`
-- Shared live-stack test credentials: `test@test.com` / `Test1234567@`
+- Test user for the live stack: `test@test.com`; the password is not committed (rotated 2026-11-04). Read it from the owner's macOS Keychain: `security find-generic-password -s whisk-studio-dev-test-user -w`. Never commit credentials.
 
 ## Open Risks
 - Backend test coverage is still low relative to the route surface area.
