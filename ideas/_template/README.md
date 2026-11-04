@@ -24,7 +24,6 @@
 - Backend:
 - Frontend:
 - CDK:
-- AI scripts/notebooks:
 
 ## Contract Notes
 - API changes:

@@ -1,6 +1,6 @@
 # Codex Collaboration Instructions
 
-> Last updated: 2026-06-27
+> Last updated: 2026-11-04
 
 ## Core Engineering Rules
 - Follow `SOLID`, `DRY`, and `KISS`.
@@ -26,7 +26,7 @@
   runs the tool-calling agent = Bedrock Converse + a 9-tool fleet (`backend/lib/agent-tools.js`) and
   refuses admin ops. The old standalone `agent` mode was folded in — ADR-009 (backend agent unchanged).
 - Infra: AWS CDK 2.x in `cdk/` — a single full-stack deploy (`StaticWebAWSAIStack-dev`).
-- AI scripts: Python notebooks/scripts in `ai/` only; they are not part of runtime execution paths.
+- Scripts: `scripts/` holds repo checks (`check-file-length.sh`, `render-diagrams.sh`) and a standalone Nova Reel boto3 example; none are on a runtime path.
 - For the dense agent reference (paths, DynamoDB SK namespaces, invariants), see `docs/ai-context.md`.
 
 ## Active Branch
@@ -117,7 +117,6 @@ See `CONTRIBUTING.md` for the full quality-gate table and PR checklist. Quick re
 - `frontend-ui`: `frontend/src/**`
 - `infra-cdk`: `cdk/lib/**`, `cdk/bin/**`, `cdk/scripts/**`
 - `docs-and-ops`: `*.md`, `docs/**`, `ideas/**`
-- `ai-research`: `ai/scripts/**`, `ai/notebooks/**`
 
 ## Investigation-First Mode
 For bugs and unclear behavior, start read-only:
