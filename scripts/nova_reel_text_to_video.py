@@ -1,5 +1,10 @@
 """
 Example: Amazon Nova Reel text-to-video generation (async) using boto3.
+
+Standalone; the app does not import it. Run from the repo root:
+    pip install boto3
+    OUTPUT_S3_URI=s3://<bucket>/videos/ INPUT_S3_URI=s3://<bucket>/images/<image>.jpg \
+        python3 scripts/nova_reel_text_to_video.py
 """
 
 import base64

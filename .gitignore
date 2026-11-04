@@ -134,12 +134,8 @@ cdk/*/*.js
 !cdk/scripts/*.js
 cdk.out/
 
-# AI environment
-ai/env/
-ai/__pycache__/
-**/.ipynb_checkpoints/
-.ipynb_checkpoints/
-ai/data/
+# Python (scripts/nova_reel_text_to_video.py)
+__pycache__/
 
 .DS_Store
 .cdk-idea-lock

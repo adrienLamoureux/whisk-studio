@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en" data-ar-palette="1.1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archon docs</title>
+<meta name="description" content="Engineering docs for this codebase, for people and agents: module guides, each with a Markdown twin for coding agents.">
+<meta name="generator" content="archon-document">
+<style>
+/* archon-palette: 1.1
+   The single source of truth for the look of every archon-document HTML page.
+   - Tokens are hex only: archon.js hands them to Mermaid, which cannot parse color-mix().
+   - The :root[data-theme="dark"] block is copied by build_html.py into a
+     prefers-color-scheme variant, so dark values are edited in one place only.
+   - Change the look here, bump the version above, then run
+     `build_html.py --rebuild <pages>` to re-skin existing pages. */
+
+:root {
+  color-scheme: light;
+  /* surfaces */
+  --ar-bg: #f6f7f9;
+  --ar-surface: #ffffff;
+  --ar-surface-2: #f0f2f6;
+  --ar-border: #dde2ea;
+  --ar-border-strong: #c3cad6;
+  /* ink */
+  --ar-text: #131a26;
+  --ar-text-2: #455064;
+  --ar-text-3: #6e798c;
+  /* brand */
+  --ar-accent: #4f46e5;
+  --ar-accent-ink: #3b33c4;
+  --ar-accent-soft: #eef0fe;
+  /* semantic: callouts, badges, status */
+  --ar-info: #1d64d8;
+  --ar-info-soft: #e8f0fd;
+  --ar-ok: #17794a;
+  --ar-ok-soft: #e4f4eb;
+  --ar-warn: #9a6200;
+  --ar-warn-soft: #fcf2dc;
+  --ar-danger: #c22d3a;
+  --ar-danger-soft: #fdebed;
+  --ar-proposal: #7c3aed;
+  --ar-proposal-soft: #f3edfe;
+  /* diagram + card kinds */
+  --ar-k-user: #475569;
+  --ar-k-user-soft: #eef1f5;
+  --ar-k-svc: #2563eb;
+  --ar-k-svc-soft: #e9f0fd;
+  --ar-k-data: #0f766e;
+  --ar-k-data-soft: #e3f4f1;
+  --ar-k-queue: #b45309;
+  --ar-k-queue-soft: #fdf1e2;
+  --ar-k-ext: #6b7280;
+  --ar-k-ext-soft: #f4f5f7;
+  --ar-k-sec: #be185d;
+  --ar-k-sec-soft: #fce9f2;
+  /* code */
+  --ar-code-bg: #f2f4f8;
+  --ar-code-text: #1f2937;
+  /* type, shape, rhythm */
+  --ar-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --ar-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  --ar-diagram-font-size: 14px;
+  --ar-radius: 10px;
+  --ar-radius-sm: 6px;
+  --ar-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -12px rgba(16, 24, 40, 0.12);
+  --ar-measure: 72ch;
+  --ar-gap: 16px;
+  --ar-toc-width: 220px;
+  --ar-page-width: 1180px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ar-bg: #0d1117;
+  --ar-surface: #151a22;
+  --ar-surface-2: #1b212b;
+  --ar-border: #29303c;
+  --ar-border-strong: #3a4352;
+  --ar-text: #e7ebf2;
+  --ar-text-2: #a9b3c3;
+  --ar-text-3: #7b8597;
+  --ar-accent: #8f8afe;
+  --ar-accent-ink: #b3b0ff;
+  --ar-accent-soft: #23214a;
+  --ar-info: #70a7ff;
+  --ar-info-soft: #13243f;
+  --ar-ok: #4fc58c;
+  --ar-ok-soft: #10291d;
+  --ar-warn: #e5b448;
+  --ar-warn-soft: #2e2410;
+  --ar-danger: #ff7d86;
+  --ar-danger-soft: #34161a;
+  --ar-proposal: #b794ff;
+  --ar-proposal-soft: #261b3f;
+  --ar-k-user: #94a3b8;
+  --ar-k-user-soft: #1c232e;
+  --ar-k-svc: #6ea8fe;
+  --ar-k-svc-soft: #14233d;
+  --ar-k-data: #3cc3b2;
+  --ar-k-data-soft: #0f2a27;
+  --ar-k-queue: #f0a75a;
+  --ar-k-queue-soft: #2f2213;
+  --ar-k-ext: #9aa3b0;
+  --ar-k-ext-soft: #1d2129;
+  --ar-k-sec: #f472b6;
+  --ar-k-sec-soft: #34172a;
+  --ar-code-bg: #11161d;
+  --ar-code-text: #dbe2ec;
+  --ar-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --ar-bg: #0d1117;
+  --ar-surface: #151a22;
+  --ar-surface-2: #1b212b;
+  --ar-border: #29303c;
+  --ar-border-strong: #3a4352;
+  --ar-text: #e7ebf2;
+  --ar-text-2: #a9b3c3;
+  --ar-text-3: #7b8597;
+  --ar-accent: #8f8afe;
+  --ar-accent-ink: #b3b0ff;
+  --ar-accent-soft: #23214a;
+  --ar-info: #70a7ff;
+  --ar-info-soft: #13243f;
+  --ar-ok: #4fc58c;
+  --ar-ok-soft: #10291d;
+  --ar-warn: #e5b448;
+  --ar-warn-soft: #2e2410;
+  --ar-danger: #ff7d86;
+  --ar-danger-soft: #34161a;
+  --ar-proposal: #b794ff;
+  --ar-proposal-soft: #261b3f;
+  --ar-k-user: #94a3b8;
+  --ar-k-user-soft: #1c232e;
+  --ar-k-svc: #6ea8fe;
+  --ar-k-svc-soft: #14233d;
+  --ar-k-data: #3cc3b2;
+  --ar-k-data-soft: #0f2a27;
+  --ar-k-queue: #f0a75a;
+  --ar-k-queue-soft: #2f2213;
+  --ar-k-ext: #9aa3b0;
+  --ar-k-ext-soft: #1d2129;
+  --ar-k-sec: #f472b6;
+  --ar-k-sec-soft: #34172a;
+  --ar-code-bg: #11161d;
+  --ar-code-text: #dbe2ec;
+  --ar-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  }
+}
+
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ar-bg);
+  color: var(--ar-text);
+  font: 400 16px/1.6 var(--ar-font);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--ar-accent-ink); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--ar-accent); outline-offset: 2px; }
+strong { font-weight: 600; }
+code { font: 0.875em/1.4 var(--ar-mono); background: var(--ar-code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+[hidden] { display: none !important; }
+pre {
+  background: var(--ar-code-bg);
+  color: var(--ar-code-text);
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius);
+  padding: 14px 16px;
+  margin: 0 0 16px;
+  overflow-x: auto;
+  font: 13.5px/1.55 var(--ar-mono);
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+/* ---------- page layout ---------- */
+.ar-page {
+  max-width: var(--ar-page-width);
+  margin: 0 auto;
+  padding: 32px 16px 80px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 48px;
+}
+.ar-main { min-width: 0; counter-reset: ar-sec; }
+.ar-toc { display: none; font-size: 0.85rem; }
+@media (min-width: 1080px) {
+  .ar-page { grid-template-columns: var(--ar-toc-width) minmax(0, 1fr); padding: 48px 32px 96px; }
+  .ar-toc { display: block; position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow: auto; }
+  .ar-toc-mobile { display: none; }
+}
+.ar-toc ol, .ar-toc-mobile ol { list-style: none; padding: 0; margin: 8px 0 0; border-left: 1px solid var(--ar-border); }
+.ar-toc a, .ar-toc-mobile a {
+  display: block;
+  padding: 5px 12px;
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  color: var(--ar-text-3);
+  text-decoration: none;
+  line-height: 1.35;
+}
+.ar-toc a:hover, .ar-toc-mobile a:hover { color: var(--ar-text); }
+.ar-toc a.is-active { color: var(--ar-accent-ink); border-left-color: var(--ar-accent); }
+.ar-toc-mobile {
+  margin: 0 0 32px;
+  padding: 10px 14px;
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius);
+  font-size: 0.9rem;
+}
+.ar-toc-mobile summary { cursor: pointer; font-weight: 600; color: var(--ar-text-2); }
+
+/* ---------- header + footer ---------- */
+.ar-header { margin: 0 0 32px; padding: 0 0 24px; border-bottom: 1px solid var(--ar-border); }
+.ar-header-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ar-eyebrow { font: 600 12px/1 var(--ar-font); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ar-accent); }
+.ar-header h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.ar-summary { margin: 0 0 16px; max-width: var(--ar-measure); font-size: 1.125rem; color: var(--ar-text-2); }
+.ar-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: 12.5px;
+  color: var(--ar-text-2);
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border);
+  border-radius: 999px;
+}
+.ar-chip.is-current { color: var(--ar-ok); border-color: var(--ar-ok); background: var(--ar-ok-soft); }
+.ar-chip.is-draft { color: var(--ar-warn); border-color: var(--ar-warn); background: var(--ar-warn-soft); }
+.ar-chip.is-proposal { color: var(--ar-proposal); border-color: var(--ar-proposal); background: var(--ar-proposal-soft); }
+.ar-chip.is-deprecated { color: var(--ar-danger); border-color: var(--ar-danger); background: var(--ar-danger-soft); }
+.ar-theme-btn {
+  padding: 6px 12px;
+  font: 500 12px/1 var(--ar-font);
+  color: var(--ar-text-2);
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.ar-theme-btn:hover { color: var(--ar-text); border-color: var(--ar-border-strong); }
+.ar-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ar-border);
+  font-size: 0.82rem;
+  color: var(--ar-text-3);
+}
+.ar-label { margin: 0 0 10px; font: 600 11.5px/1 var(--ar-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ar-text-3); }
+
+/* ---------- sections + prose ---------- */
+.ar-main > section { margin: 0 0 56px; }
+.ar-main h2 {
+  counter-increment: ar-sec;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 8px;
+  font-size: 1.45rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  scroll-margin-top: 24px;
+}
+.ar-main h2::before { content: counter(ar-sec, decimal-leading-zero); font: 600 0.8rem/1 var(--ar-mono); color: var(--ar-accent); }
+.ar-main h3 { margin: 28px 0 8px; font-size: 1.05rem; line-height: 1.3; }
+.ar-main p { margin: 0 0 12px; max-width: var(--ar-measure); }
+.ar-main ul, .ar-main ol { margin: 0 0 16px; padding-left: 1.25em; max-width: var(--ar-measure); }
+.ar-main li { margin: 4px 0; }
+.ar-main li::marker { color: var(--ar-text-3); }
+.ar-lead { font-size: 1.05rem; color: var(--ar-text-2); margin-bottom: 20px; }
+
+/* ---------- TL;DR ---------- */
+.ar-tldr {
+  margin: 0 0 48px;
+  padding: 18px 22px;
+  background: var(--ar-accent-soft);
+  border: 1px solid var(--ar-accent);
+  border-radius: var(--ar-radius);
+}
+.ar-tldr .ar-label { color: var(--ar-accent-ink); }
+.ar-tldr ul { margin: 0; }
+
+/* ---------- kinds: one variable pair drives cards, legends and diagram nodes ---------- */
+[data-kind="user"] { --ar-kind: var(--ar-k-user); --ar-kind-soft: var(--ar-k-user-soft); }
+[data-kind="svc"] { --ar-kind: var(--ar-k-svc); --ar-kind-soft: var(--ar-k-svc-soft); }
+[data-kind="data"] { --ar-kind: var(--ar-k-data); --ar-kind-soft: var(--ar-k-data-soft); }
+[data-kind="queue"] { --ar-kind: var(--ar-k-queue); --ar-kind-soft: var(--ar-k-queue-soft); }
+[data-kind="ext"] { --ar-kind: var(--ar-k-ext); --ar-kind-soft: var(--ar-k-ext-soft); }
+[data-kind="sec"] { --ar-kind: var(--ar-k-sec); --ar-kind-soft: var(--ar-k-sec-soft); }
+[data-kind="hot"] { --ar-kind: var(--ar-accent); --ar-kind-soft: var(--ar-accent-soft); }
+[data-kind="ok"] { --ar-kind: var(--ar-ok); --ar-kind-soft: var(--ar-ok-soft); }
+[data-kind="warn"] { --ar-kind: var(--ar-warn); --ar-kind-soft: var(--ar-warn-soft); }
+[data-kind="danger"] { --ar-kind: var(--ar-danger); --ar-kind-soft: var(--ar-danger-soft); }
+[data-kind="info"] { --ar-kind: var(--ar-info); --ar-kind-soft: var(--ar-info-soft); }
+[data-kind="proposal"] { --ar-kind: var(--ar-proposal); --ar-kind-soft: var(--ar-proposal-soft); }
+
+/* ---------- cards ---------- */
+.ar-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--ar-gap); margin: 0 0 24px; }
+.ar-card {
+  padding: 16px 18px;
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border);
+  border-top: 3px solid var(--ar-kind, var(--ar-border-strong));
+  border-radius: var(--ar-radius);
+  box-shadow: var(--ar-shadow);
+}
+.ar-main .ar-card h3 { margin: 0 0 6px; font-size: 1rem; }
+.ar-card p, .ar-card li { font-size: 0.935rem; color: var(--ar-text-2); }
+.ar-card > :last-child { margin-bottom: 0; }
+
+/* ---------- steps ---------- */
+.ar-main .ar-steps { list-style: none; counter-reset: ar-step; padding: 0; margin: 0 0 24px; }
+.ar-steps > li { counter-increment: ar-step; position: relative; margin: 0; padding: 2px 0 18px 44px; }
+.ar-steps > li::before {
+  content: counter(ar-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  text-align: center;
+  font: 600 13px/26px var(--ar-mono);
+  color: var(--ar-accent-ink);
+  background: var(--ar-accent-soft);
+  border: 1px solid var(--ar-accent);
+}
+.ar-steps > li::after { content: ""; position: absolute; left: 14px; top: 32px; bottom: 4px; width: 1px; background: var(--ar-border); }
+.ar-steps > li:last-child::after { display: none; }
+.ar-steps > li > strong:first-child { display: block; }
+
+/* ---------- callouts ---------- */
+.ar-callout {
+  --ar-c: var(--ar-info);
+  --ar-c-soft: var(--ar-info-soft);
+  max-width: var(--ar-measure);
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  background: var(--ar-c-soft);
+  border-left: 3px solid var(--ar-c);
+  border-radius: var(--ar-radius-sm);
+}
+.ar-callout.is-tip { --ar-c: var(--ar-ok); --ar-c-soft: var(--ar-ok-soft); }
+.ar-callout.is-warn { --ar-c: var(--ar-warn); --ar-c-soft: var(--ar-warn-soft); }
+.ar-callout.is-danger { --ar-c: var(--ar-danger); --ar-c-soft: var(--ar-danger-soft); }
+/* No text-transform: titles often hold identifiers (getJob) whose case matters. */
+.ar-callout > strong:first-child { display: block; margin-bottom: 2px; font-size: 0.95rem; color: var(--ar-c); }
+.ar-callout > :last-child { margin-bottom: 0; }
+
+/* ---------- diagrams ---------- */
+.ar-diagram {
+  margin: 0 0 24px;
+  padding: 20px;
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius);
+  box-shadow: var(--ar-shadow);
+  overflow-x: auto;
+}
+.ar-diagram pre.mermaid { margin: 0; padding: 0; background: none; border: 0; text-align: center; color: var(--ar-text-3); }
+.ar-diagram svg { max-width: 100%; height: auto; }
+.ar-diagram figcaption { margin-top: 12px; text-align: center; font-size: 0.85rem; color: var(--ar-text-3); }
+.ar-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin-top: 12px; font-size: 0.8rem; color: var(--ar-text-2); }
+.ar-legend [data-kind]::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border-radius: 3px;
+  background: var(--ar-kind-soft);
+  border: 1.5px solid var(--ar-kind);
+}
+/* Mermaid flowchart nodes tagged `:::kind`. !important beats Mermaid's id-scoped theme rules. */
+.ar-diagram .node.user { --ar-kind: var(--ar-k-user); --ar-kind-soft: var(--ar-k-user-soft); }
+.ar-diagram .node.svc { --ar-kind: var(--ar-k-svc); --ar-kind-soft: var(--ar-k-svc-soft); }
+.ar-diagram .node.data { --ar-kind: var(--ar-k-data); --ar-kind-soft: var(--ar-k-data-soft); }
+.ar-diagram .node.queue { --ar-kind: var(--ar-k-queue); --ar-kind-soft: var(--ar-k-queue-soft); }
+.ar-diagram .node.ext { --ar-kind: var(--ar-k-ext); --ar-kind-soft: var(--ar-k-ext-soft); }
+.ar-diagram .node.sec { --ar-kind: var(--ar-k-sec); --ar-kind-soft: var(--ar-k-sec-soft); }
+.ar-diagram .node.hot { --ar-kind: var(--ar-accent); --ar-kind-soft: var(--ar-accent-soft); }
+.ar-diagram .node:is(.user, .svc, .data, .queue, .ext, .sec, .hot) :is(rect, polygon, circle, ellipse, path) {
+  fill: var(--ar-kind-soft) !important;
+  stroke: var(--ar-kind) !important;
+  stroke-width: 1.5px !important;
+}
+.ar-diagram .node.ext :is(rect, polygon, circle, ellipse, path) { stroke-dasharray: 5 3; }
+.ar-diagram .node.hot :is(rect, polygon, circle, ellipse, path) { stroke-width: 2.5px !important; }
+.ar-diagram .node.hot .nodeLabel { font-weight: 600; color: var(--ar-accent-ink) !important; }
+
+/* ---------- tables ---------- */
+.ar-scroll { margin: 0 0 24px; overflow-x: auto; background: var(--ar-surface); border: 1px solid var(--ar-border); border-radius: var(--ar-radius); }
+.ar-main table { width: 100%; border-collapse: collapse; font-size: 0.925rem; }
+.ar-main th, .ar-main td { padding: 9px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--ar-border); }
+.ar-main th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ar-text-3);
+  background: var(--ar-surface-2);
+  white-space: nowrap;
+}
+.ar-main tr:last-child td { border-bottom: 0; }
+.ar-yes, .ar-no, .ar-part { white-space: nowrap; }
+.ar-yes::before { content: "\2713\00a0"; color: var(--ar-ok); font-weight: 700; }
+.ar-no::before { content: "\2717\00a0"; color: var(--ar-danger); font-weight: 700; }
+.ar-part::before { content: "\25D0\00a0"; color: var(--ar-warn); font-weight: 700; }
+
+/* ---------- key/value + glossary ---------- */
+.ar-kv {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  margin: 0 0 24px;
+  overflow: hidden;
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius);
+}
+.ar-kv dt, .ar-kv dd { margin: 0; padding: 9px 14px; border-bottom: 1px solid var(--ar-border); }
+.ar-kv dt { font: 500 0.85rem/1.5 var(--ar-mono); color: var(--ar-text); background: var(--ar-surface-2); }
+.ar-kv dd { font-size: 0.935rem; color: var(--ar-text-2); }
+.ar-kv > :nth-last-child(-n + 2) { border-bottom: 0; }
+@media (max-width: 560px) {
+  .ar-kv { grid-template-columns: 1fr; }
+  .ar-kv dt { border-bottom: 0; padding-bottom: 2px; }
+}
+
+/* ---------- stats ---------- */
+.ar-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--ar-gap); margin: 0 0 24px; }
+.ar-stat { padding: 14px 16px; background: var(--ar-surface); border: 1px solid var(--ar-border); border-radius: var(--ar-radius); }
+.ar-stat b { display: block; font-size: 1.6rem; line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ar-stat span { font-size: 0.82rem; color: var(--ar-text-3); }
+
+/* ---------- inline: badges + refs ---------- */
+.ar-badge {
+  --ar-b: var(--ar-text-2);
+  --ar-b-soft: var(--ar-surface-2);
+  display: inline-block;
+  padding: 0 7px;
+  font: 600 11px/1.7 var(--ar-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  color: var(--ar-b);
+  background: var(--ar-b-soft);
+  border: 1px solid var(--ar-b);
+  border-radius: 4px;
+}
+.ar-badge.is-verified { --ar-b: var(--ar-ok); --ar-b-soft: var(--ar-ok-soft); }
+.ar-badge.is-inferred { --ar-b: var(--ar-info); --ar-b-soft: var(--ar-info-soft); }
+.ar-badge.is-proposal { --ar-b: var(--ar-proposal); --ar-b-soft: var(--ar-proposal-soft); }
+.ar-badge.is-unverified { --ar-b: var(--ar-warn); --ar-b-soft: var(--ar-warn-soft); }
+.ar-badge.is-risk { --ar-b: var(--ar-danger); --ar-b-soft: var(--ar-danger-soft); }
+code.ar-ref { font-size: 0.8rem; color: var(--ar-text-2); background: var(--ar-surface-2); border: 1px solid var(--ar-border); padding: 1px 6px; overflow-wrap: anywhere; }
+
+/* ---------- collection navigation: crumb, contents home link, prev/next pager ---------- */
+.ar-crumb { color: var(--ar-text-3); text-decoration: none; }
+.ar-crumb:hover { color: var(--ar-accent-ink); text-decoration: underline; }
+.ar-crumb-sep { margin: 0 8px; color: var(--ar-text-3); }
+.ar-toc-home { display: block; margin: 0 0 20px; color: var(--ar-text-2); font-weight: 500; text-decoration: none; }
+.ar-toc-home:hover { color: var(--ar-accent-ink); }
+.ar-pager { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ar-gap); margin-top: 56px; }
+.ar-pager a {
+  display: block;
+  padding: 14px 18px;
+  color: var(--ar-text);
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius);
+}
+.ar-pager a:hover { color: var(--ar-accent-ink); border-color: var(--ar-accent); }
+.ar-pager .ar-label { display: block; margin-bottom: 6px; }
+.ar-pager-next { grid-column: 2; text-align: right; }
+.ar-pager + .ar-footer { margin-top: 32px; }
+@media (max-width: 560px) {
+  .ar-pager { grid-template-columns: 1fr; }
+  .ar-pager-next { grid-column: 1; }
+}
+
+/* ---------- collection index: link cards and the filter ---------- */
+.ar-card.is-link { position: relative; transition: border-color 0.15s ease, transform 0.15s ease; }
+.ar-card.is-link:hover { border-color: var(--ar-kind, var(--ar-accent)); transform: translateY(-1px); }
+.ar-card.is-link h3 a { color: var(--ar-text); text-decoration: none; }
+.ar-card.is-link h3 a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.ar-card.is-link a.ar-chip { position: relative; z-index: 1; }
+.ar-card .ar-meta { margin-top: 12px; }
+a.ar-chip { text-decoration: none; }
+a.ar-chip:hover { color: var(--ar-accent-ink); border-color: var(--ar-accent); }
+.ar-filter { margin: -16px 0 40px; }
+.ar-filter .ar-label { display: block; }
+.ar-filter input {
+  width: 100%;
+  max-width: 420px;
+  padding: 9px 16px;
+  font: 400 0.95rem/1.4 var(--ar-font);
+  color: var(--ar-text);
+  background: var(--ar-surface);
+  border: 1px solid var(--ar-border-strong);
+  border-radius: 999px;
+}
+.ar-filter input:focus-visible { outline: 2px solid var(--ar-accent); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) {
+  .ar-card.is-link { transition: none; }
+  .ar-card.is-link:hover { transform: none; }
+}
+
+/* ---------- print ---------- */
+@media print {
+  .ar-toc, .ar-toc-mobile, .ar-theme-btn, .ar-pager, .ar-filter { display: none; }
+  .ar-page { display: block; max-width: none; padding: 0; }
+  body { background: var(--ar-surface); }
+  .ar-diagram, .ar-card, .ar-callout, .ar-steps > li, tr { break-inside: avoid; }
+}
+
+</style>
+
+<script>
+/* archon-document runtime: theme toggle, palette-driven Mermaid theming, TOC scroll-spy,
+   and the collection-index filter.
+   Runs inline in <head> so the stored theme applies before first paint. */
+(() => {
+  const STORAGE_KEY = "ar-theme";
+  const MODES = ["auto", "light", "dark"];
+  const TOC_SPY_MARGIN = "0px 0px -75% 0px";
+  // Mermaid theme variable -> Archon token. Diagrams follow the palette in both themes.
+  const MERMAID_TOKENS = {
+    background: "--ar-surface",
+    primaryColor: "--ar-surface-2",
+    primaryBorderColor: "--ar-border-strong",
+    primaryTextColor: "--ar-text",
+    secondaryColor: "--ar-accent-soft",
+    secondaryBorderColor: "--ar-accent",
+    secondaryTextColor: "--ar-text",
+    tertiaryColor: "--ar-bg",
+    tertiaryBorderColor: "--ar-border",
+    tertiaryTextColor: "--ar-text",
+    mainBkg: "--ar-surface-2",
+    nodeBorder: "--ar-border-strong",
+    textColor: "--ar-text",
+    titleColor: "--ar-text",
+    lineColor: "--ar-text-3",
+    clusterBkg: "--ar-bg",
+    clusterBorder: "--ar-border",
+    edgeLabelBackground: "--ar-surface",
+    noteBkgColor: "--ar-warn-soft",
+    noteBorderColor: "--ar-warn",
+    noteTextColor: "--ar-text",
+    actorBkg: "--ar-surface-2",
+    actorBorder: "--ar-border-strong",
+    actorTextColor: "--ar-text",
+    actorLineColor: "--ar-border-strong",
+    signalColor: "--ar-text-2",
+    signalTextColor: "--ar-text",
+    labelBoxBkgColor: "--ar-surface-2",
+    labelBoxBorderColor: "--ar-border-strong",
+    labelTextColor: "--ar-text",
+    loopTextColor: "--ar-text-2",
+    activationBkgColor: "--ar-accent-soft",
+    activationBorderColor: "--ar-accent",
+    sequenceNumberColor: "--ar-surface",
+    fontFamily: "--ar-font",
+    fontSize: "--ar-diagram-font-size",
+  };
+
+  const root = document.documentElement;
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  const readMode = () => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return MODES.includes(stored) ? stored : MODES[0];
+    } catch {
+      return MODES[0];
+    }
+  };
+  const saveMode = (value) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, value);
+    } catch {
+      /* storage unavailable: the choice lasts for this view only */
+    }
+  };
+
+  let mode = readMode();
+  const applyTheme = () => {
+    if (mode === MODES[0]) root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", mode);
+  };
+  applyTheme();
+
+  const isDark = () => mode === "dark" || (mode === MODES[0] && darkQuery.matches);
+  const cssVar = (name) => getComputedStyle(root).getPropertyValue(name).trim();
+
+  let diagrams = [];
+  const renderDiagrams = () => {
+    if (!window.mermaid || !diagrams.length) return;
+    const themeVariables = Object.fromEntries(
+      Object.entries(MERMAID_TOKENS).map(([key, token]) => [key, cssVar(token)]),
+    );
+    themeVariables.darkMode = isDark();
+    window.mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "base", themeVariables });
+    diagrams.forEach((el) => {
+      el.removeAttribute("data-processed");
+      el.innerHTML = el.dataset.arSrc;
+    });
+    window.mermaid.run({ nodes: diagrams }).catch((err) => console.warn("archon: diagram failed to render", err));
+  };
+
+  const labelFor = (value) => value.charAt(0).toUpperCase() + value.slice(1);
+
+  const initThemeToggle = () => {
+    const button = document.querySelector("[data-ar-theme-toggle]");
+    if (!button) return;
+    button.textContent = labelFor(mode);
+    button.addEventListener("click", () => {
+      mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+      saveMode(mode);
+      applyTheme();
+      button.textContent = labelFor(mode);
+      renderDiagrams();
+    });
+    darkQuery.addEventListener("change", () => {
+      if (mode === MODES[0]) renderDiagrams();
+    });
+  };
+
+  const initTocSpy = () => {
+    const links = [...document.querySelectorAll(".ar-toc a[href^='#']")];
+    if (!links.length || !("IntersectionObserver" in window)) return;
+    const setActive = (id) => links.forEach((a) => a.classList.toggle("is-active", a.hash === `#${id}`));
+    const observer = new IntersectionObserver(
+      (entries) => entries.filter((e) => e.isIntersecting).forEach((e) => setActive(e.target.id)),
+      { rootMargin: TOC_SPY_MARGIN },
+    );
+    links.forEach((a) => {
+      const target = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+      if (target) observer.observe(target);
+    });
+  };
+
+  // Collection index: every word typed must appear in a card's text; empty groups hide.
+  const initFilter = () => {
+    const input = document.querySelector("[data-ar-filter]");
+    if (!input) return;
+    const items = [...document.querySelectorAll("[data-ar-filter-text]")];
+    const groups = [...document.querySelectorAll("[data-ar-filter-group]")];
+    const empty = document.querySelector("[data-ar-filter-empty]");
+    input.addEventListener("input", () => {
+      const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      items.forEach((el) => {
+        const hit = terms.every((t) => el.dataset.arFilterText.includes(t));
+        el.hidden = !hit;
+        if (hit) shown += 1;
+      });
+      groups.forEach((g) => {
+        g.hidden = !g.querySelector("[data-ar-filter-text]:not([hidden])");
+      });
+      if (empty) empty.hidden = shown > 0;
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "/" && document.activeElement !== input) {
+        e.preventDefault();
+        input.focus();
+      }
+    });
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    diagrams = [...document.querySelectorAll("pre.mermaid")];
+    diagrams.forEach((el) => {
+      el.dataset.arSrc = el.innerHTML;
+    });
+    initThemeToggle();
+    initTocSpy();
+    initFilter();
+    renderDiagrams();
+  });
+})();
+
+</script>
+</head>
+<body>
+<div class="ar-page">
+  <aside class="ar-toc" aria-label="Contents">
+    
+    <p class="ar-label">Contents</p>
+    <ol><li><a href="#module-guides">Module guides</a></li></ol>
+  </aside>
+  <main class="ar-main">
+    <header class="ar-header">
+      <div class="ar-header-top">
+        <span class="ar-eyebrow">Collection index</span>
+        <button class="ar-theme-btn" type="button" data-ar-theme-toggle aria-label="Cycle colour theme">Auto</button>
+      </div>
+      <h1>Archon docs</h1>
+      <p class="ar-summary">Engineering docs for this codebase, for people and agents: module guides, each with a Markdown twin for coding agents.</p>
+      <div class="ar-meta"><span class="ar-chip">Updated 2026-10-26</span><span class="ar-chip">For software engineers</span><span class="ar-chip">1 document</span></div>
+    </header>
+    <details class="ar-toc-mobile">
+      <summary>Contents</summary>
+      <ol><li><a href="#module-guides">Module guides</a></li></ol>
+    </details>
+<!--ar:body-->
+<div class="ar-tldr"><p class="ar-label">Start here</p><ul><li>1 document in 1 group.</li><li>Start with <a href="job-spine.html">Job spine — one record for every generation</a>.</li><li>Every page has a Markdown twin for agents. <a href="INDEX.md">INDEX.md</a> lists them all.</li></ul></div>
+<section data-ar-filter-group><h2 id="module-guides">Module guides</h2><p class="ar-lead">1 document.</p><div class="ar-cards"><div class="ar-card is-link" data-kind="hot" data-ar-filter-text="job-spine job spine — one record for every generation how every image, video, illustration, animation and music generation is tracked as one job row that the ui resumes from after a reload. module guides jobs generation polling resume dynamodb replicate bedrock job store jobstore media job generation job job feed active jobs"><h3><a href="job-spine.html">Job spine — one record for every generation</a></h3><p>How every image, video, illustration, animation and music generation is tracked as one JOB row that the UI resumes from after a reload.</p><div class="ar-meta"><span class="ar-chip">Module guide</span><span class="ar-chip is-current">current</span><span class="ar-chip">2026-10-26</span><a class="ar-chip" href="job-spine.md">MD</a></div></div></div></section>
+<p class="ar-lead" data-ar-filter-empty hidden>No document matches the filter.</p>
+<!--ar:/body-->
+    
+    <footer class="ar-footer"><span>Agent index: <a href="INDEX.md">INDEX.md</a></span><span>jobs · generation · polling · resume · dynamodb · replicate · bedrock</span><span>archon-document · palette 1.1</span></footer>
+  </main>
+</div>
+<script type="application/json" id="ar-meta">{
+ "title": "Archon docs",
+ "summary": "Engineering docs for this codebase, for people and agents: module guides, each with a Markdown twin for coding agents.",
+ "doc_type": "Collection index",
+ "kind": "index",
+ "doc_count": 1,
+ "tags": [
+  "jobs",
+  "generation",
+  "polling",
+  "resume",
+  "dynamodb",
+  "replicate",
+  "bedrock"
+ ],
+ "md_twin": "INDEX.md",
+ "updated": "2026-10-26",
+ "audience": "software engineers"
+}</script>
+</body>
+</html>

@@ -30,7 +30,7 @@ See `docs/architecture.md` for the full route map, storage keys, and deployment.
 - `cdk/`: infrastructure stacks plus `idea:*` helper scripts
 - `ideas/`: per-idea context (`README`, `DECISIONS`, `RUNBOOK`, `STATUS`, `IMPROVEMENTS`, sometimes `cdk-outputs.json`)
 - `docs/`: architecture, API spec, ADRs, and workflow docs
-- `ai/`: optional research scripts/notebooks only (no runtime dependency)
+- `scripts/`: repo checks (500-line limit, diagram rendering) and a standalone Nova Reel text-to-video example (Python + boto3, no runtime dependency)
 - `IDEAS.md`: top-level registry of deployed idea stacks
 - `AGENTS.md`: collaboration rules for future agents
 
