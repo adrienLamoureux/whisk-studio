@@ -2,6 +2,13 @@
 #
 # Secrets: CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`), as in dev-kit.yml, so runs count
 # against your Claude plan, not an API balance. Nothing else.
+#
+# Off by default, to keep plan usage under control: the schedule still fires, but the job is
+# skipped unless the repo variable ENABLE_DRIFT_CHECK is true. A manual run (Actions tab >
+# Run workflow, or `gh workflow run drift-check.yml`) always runs. Each run is capped at
+# USD 1 with --max-budget-usd.
+#   Turn on:  gh variable set ENABLE_DRIFT_CHECK --body true
+#   Turn off: gh variable delete ENABLE_DRIFT_CHECK
 
 name: Docs drift check
 
@@ -18,6 +25,7 @@ permissions:
 jobs:
   drift:
     name: Docs vs code drift
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_DRIFT_CHECK == 'true'
     runs-on: ubuntu-latest
     env:
       # The Action stops at Claude's first final result, so a background subagent would be cut off.
@@ -37,4 +45,5 @@ jobs:
             If none, do nothing.
           claude_args: >-
             --max-turns 12
+            --max-budget-usd 1
             --allowedTools "Read,Grep,Glob,Bash(gh issue create:*)"

@@ -10,6 +10,12 @@
 #   EVAL_AWS_REGION  optional; the runner falls back to us-east-1
 # Until the two keys exist, the run skips the eval with a warning and stays green.
 # Spend per run is capped by EVAL_MAX_USD.
+#
+# Off by default, to keep Bedrock spend under control: the schedule still fires, but the job
+# is skipped unless the repo variable ENABLE_NIGHTLY_EVAL is true. A manual run (Actions tab >
+# Run workflow, or `gh workflow run nightly-eval.yml`) always runs.
+#   Turn on:  gh variable set ENABLE_NIGHTLY_EVAL --body true
+#   Turn off: gh variable delete ENABLE_NIGHTLY_EVAL
 
 name: Nightly agent eval
 
@@ -25,6 +31,7 @@ permissions:
 jobs:
   eval-live:
     name: Live agent eval
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_NIGHTLY_EVAL == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
