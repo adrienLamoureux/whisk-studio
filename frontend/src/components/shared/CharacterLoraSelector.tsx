@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 import { listCharacters } from "../../services/characters";
 import { listLoraProfilesForCharacter } from "../../services/lora";
+import type { CharacterSummary, LoraProfileSummary } from "../../types/media";
 
 /**
  * CharacterLoraSelector
@@ -18,6 +20,16 @@ import { listLoraProfilesForCharacter } from "../../services/lora";
  *   disabled          bool
  *   compact           bool — use smaller font / tighter spacing
  */
+export interface CharacterLoraSelectorProps {
+  apiBaseUrl?: string;
+  characterId?: string | null;
+  loraProfileId?: string | null;
+  onCharacterChange: (id: string | null) => void;
+  onLoraChange: (id: string | null) => void;
+  disabled?: boolean;
+  compact?: boolean;
+}
+
 export default function CharacterLoraSelector({
   apiBaseUrl,
   characterId,
@@ -26,9 +38,9 @@ export default function CharacterLoraSelector({
   onLoraChange,
   disabled = false,
   compact = false,
-}) {
-  const [characters, setCharacters] = useState([]);
-  const [loraProfiles, setLoraProfiles] = useState([]);
+}: CharacterLoraSelectorProps) {
+  const [characters, setCharacters] = useState<CharacterSummary[]>([]);
+  const [loraProfiles, setLoraProfiles] = useState<LoraProfileSummary[]>([]);
   const [loadingChars, setLoadingChars] = useState(false);
   const [loadingLoras, setLoadingLoras] = useState(false);
 
@@ -56,7 +68,7 @@ export default function CharacterLoraSelector({
   }, [apiBaseUrl, characterId]);
 
   const handleCharacterChange = useCallback(
-    (e) => {
+    (e: ChangeEvent<HTMLSelectElement>) => {
       const newCharId = e.target.value || null;
       onCharacterChange(newCharId);
       // Auto-select the character's default LoRA profile
@@ -67,14 +79,14 @@ export default function CharacterLoraSelector({
   );
 
   const handleLoraChange = useCallback(
-    (e) => {
+    (e: ChangeEvent<HTMLSelectElement>) => {
       onLoraChange(e.target.value || null);
     },
     [onLoraChange]
   );
 
   const fs = compact ? 11 : 12;
-  const labelStyle = {
+  const labelStyle: CSSProperties = {
     fontSize: fs,
     fontWeight: 600,
     color: "var(--skr-text-tertiary)",

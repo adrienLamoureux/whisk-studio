@@ -1,11 +1,11 @@
-export const readSessionCache = (key, maxAgeMs) => {
+export const readSessionCache = <T = unknown>(key: string, maxAgeMs?: number): T | null => {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.sessionStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
-    const { ts, data } = parsed;
+    const { ts, data } = parsed as { ts?: number; data: T };
     if (maxAgeMs && ts && Date.now() - ts > maxAgeMs) return null;
     return data;
   } catch (error) {
@@ -13,7 +13,7 @@ export const readSessionCache = (key, maxAgeMs) => {
   }
 };
 
-export const writeSessionCache = (key, data) => {
+export const writeSessionCache = (key: string, data: unknown): void => {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
@@ -22,7 +22,7 @@ export const writeSessionCache = (key, data) => {
   }
 };
 
-export const removeSessionCache = (key) => {
+export const removeSessionCache = (key?: string): void => {
   if (!key || typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(key);
@@ -31,7 +31,7 @@ export const removeSessionCache = (key) => {
   }
 };
 
-export const clearSessionCache = () => {
+export const clearSessionCache = (): void => {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem("whisk_images_cache");

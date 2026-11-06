@@ -1,16 +1,26 @@
 import React, { useState } from "react";
+import type { CSSProperties } from "react";
+import type { GalleryImage } from "../../types/media";
 
 /**
  * Enhanced gallery card — PixAI-inspired design with metadata overlay.
  * Used on the home feed for images and videos.
  */
+export interface GalleryCardProps {
+  image?: GalleryImage | null;
+  onOpenLightbox?: (image?: GalleryImage | null) => void;
+  onToggleFavorite?: (image?: GalleryImage | null) => void;
+  isVideo?: boolean;
+  index?: number;
+}
+
 export default function GalleryCard({
   image,
   onOpenLightbox,
   onToggleFavorite,
   isVideo = false,
   index = 0,
-}) {
+}: GalleryCardProps) {
   const [hovered, setHovered] = useState(false);
   const prompt = image?.prompt || "";
   const tags = prompt
@@ -22,7 +32,7 @@ export default function GalleryCard({
   return (
     <article
       className="skr-gallery-card"
-      style={{ "--skr-i": index }}
+      style={{ "--skr-i": index } as CSSProperties}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >

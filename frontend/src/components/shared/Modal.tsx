@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
 /**
  * Shared modal primitive — the single skr-modal-overlay/card implementation.
@@ -12,6 +13,17 @@ import React, { useEffect } from "react";
  * Handles overlay-click + Escape dismissal and dialog a11y wiring so call
  * sites only provide content.
  */
+export interface ModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  title?: string;
+  variant?: "card" | "panel";
+  ariaLabel?: string;
+  className?: string;
+  style?: CSSProperties;
+  children?: ReactNode;
+}
+
 export default function Modal({
   isOpen = true,
   onClose,
@@ -21,10 +33,10 @@ export default function Modal({
   className = "",
   style,
   children,
-}) {
+}: ModalProps) {
   useEffect(() => {
     if (!isOpen) return undefined;
-    const onKeyDown = (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKeyDown);
@@ -39,7 +51,7 @@ export default function Modal({
     className ? ` ${className}` : ""
   }`;
 
-  const handleOverlayClick = (e) => {
+  const handleOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose?.();
   };
 
