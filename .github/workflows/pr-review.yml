@@ -3,8 +3,9 @@
 # Secrets: CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`), as in dev-kit.yml, so runs count
 # against your Claude plan, not an API balance. Nothing else.
 # Only PRs from branches of this repo are reviewed: the repo is public and fork PRs get no secrets.
-# The Claude GitHub App token is checked against the workflow file on main, so the PR that adds
-# or edits this file fails its own review run. That is expected; later PRs run normally.
+# The Claude GitHub App token is checked against the workflow file on main, so on the PR that
+# adds or edits this file the review is skipped with a warning. That is expected; later PRs run
+# normally.
 
 name: PR review
 
