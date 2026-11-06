@@ -1,0 +1,8 @@
+{
+  "passRate": 90.4,
+  "passed": 47,
+  "total": 52,
+  "source": "replay",
+  "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+  "updatedAt": "2026-11-05T16:44:45.817Z"
+}

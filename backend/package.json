@@ -8,7 +8,10 @@
     "lint:syntax": "node --check index.js && node --check lambda.js && node --check lib/*.js && node --check routes/*.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test"
+    "test": "node --test",
+    "eval": "node evals/run.js",
+    "eval:live": "node evals/run.js --live",
+    "eval:judge": "node evals/judge.js"
   },
   "devDependencies": {
     "eslint": "^8.57.1",
