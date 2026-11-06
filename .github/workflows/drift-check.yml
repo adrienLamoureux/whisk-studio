@@ -1,0 +1,40 @@
+# Weekly check of docs/ai-context.md and docs/api-spec.md against the code. Opens an issue on drift.
+#
+# Secrets: CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`), as in dev-kit.yml, so runs count
+# against your Claude plan, not an API balance. Nothing else.
+
+name: Docs drift check
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  drift:
+    name: Docs vs code drift
+    runs-on: ubuntu-latest
+    env:
+      # The Action stops at Claude's first final result, so a background subagent would be cut off.
+      CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Claude drift check
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Check docs/ai-context.md and docs/api-spec.md against the code in backend/
+            and frontend/src. List routes, tools, env vars or behaviours that the docs
+            describe wrongly or omit. If there is drift, open one issue titled
+            "Docs drift" with the findings and file references, using `gh issue create`.
+            If none, do nothing.
+          claude_args: >-
+            --max-turns 12
+            --allowedTools "Read,Grep,Glob,Bash(gh issue create:*)"

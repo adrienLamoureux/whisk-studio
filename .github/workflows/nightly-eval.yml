@@ -1,0 +1,84 @@
+# Nightly live run of the agent evals (backend/evals) against baseline.json. Opens an issue on
+# a regression.
+#
+# This calls the app's own agent model on Amazon Bedrock through the AWS SDK, not Claude Code,
+# so the CLAUDE_CODE_OAUTH_TOKEN secret cannot pay for it. It needs these secrets, which do not
+# exist yet:
+#   EVAL_AWS_ACCESS_KEY_ID, EVAL_AWS_SECRET_ACCESS_KEY  an IAM user allowed bedrock:InvokeModel
+#     on the agent model, by default us.anthropic.claude-haiku-4-5-20251001-v1:0
+#     (backend/lib/agent-config.js)
+#   EVAL_AWS_REGION  optional; the runner falls back to us-east-1
+# Until the two keys exist, the run skips the eval with a warning and stays green.
+# Spend per run is capped by EVAL_MAX_USD.
+
+name: Nightly agent eval
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  eval-live:
+    name: Live agent eval
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.EVAL_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.EVAL_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.EVAL_AWS_REGION }}
+      EVAL_MAX_USD: "0.50"
+    steps:
+      - name: Check the eval secrets
+        id: secrets
+        working-directory: .
+        run: |
+          if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::EVAL_AWS_ACCESS_KEY_ID and EVAL_AWS_SECRET_ACCESS_KEY are not set; skipping the live eval."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+
+      - name: Set up Node.js
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Live eval against baseline
+        id: eval
+        if: steps.secrets.outputs.ready == 'true'
+        run: npm run eval:live
+
+      - name: Upload report
+        if: always() && steps.secrets.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: backend/evals/reports/
+
+      - name: Open issue on regression
+        if: failure() && steps.eval.outcome == 'failure'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Nightly agent eval regressed ($(date -u +%F))" \
+            --body "The live eval fell below the baseline. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
