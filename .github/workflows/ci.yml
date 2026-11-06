@@ -37,6 +37,9 @@ jobs:
       - name: Tests
         run: npm test
 
+      - name: Agent evals (replay tier, no credentials)
+        run: npm run eval
+
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
     name: Frontend tests & lint
