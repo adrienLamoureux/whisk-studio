@@ -2,21 +2,18 @@ const { Router } = require("express");
 const {
   DEFAULT_STORY_ILLUSTRATION_MODEL,
   STORY_ILLUSTRATION_MODEL_KEYS,
-  STORY_OPENING_SCENE_MAX_ENVIRONMENT_FRAGMENTS,
-  STORY_OPENING_SCENE_MAX_ACTION_FRAGMENTS,
   resolveStoryIllustrationSize,
-  isOpeningSceneItem,
   signSceneVideoUrl,
   signSceneMusicUrl,
   buildStorySceneImageKey,
   buildSceneResponse,
 } = require("./illustration-helpers");
 const { startSceneJob } = require("./scene-jobs");
-const {
-  parseOptionalNumber,
-  buildSceneMusicPayload,
-  buildStoryMusicDefaultInput,
-} = require("./music-helpers");
+const { parseOptionalNumber, buildSceneMusicPayload } = require("./music-helpers");
+const { createCurrentScene } = require("./illustration-current-scene");
+const { resolveSessionCharacter } = require("./illustration-character");
+const { buildIllustrationPromptContext } = require("./illustration-prompt-context");
+const { buildIllustrationDebugPayload } = require("./illustration-debug");
 
 module.exports = function registerStoryIllustrationRoutes(deps) {
   const {
@@ -25,21 +22,11 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
     buildMediaPk,
     buildStorySessionSk,
     buildStorySceneSk,
-    queryBySkPrefix,
-    storyMessagePrefix,
-    buildSceneFragmentsFromStoryState,
-    dedupeFragments,
-    compactScenePayload,
-    aiCraftSceneContext,
-    normalizePromptFragment,
     dynamoClient,
     PutCommand,
     getSignedUrl,
     s3Client,
     GetObjectCommand,
-    ensureStoryCharacters,
-    buildStoryCharacterPk,
-    buildStoryCharacterSk,
     clampPromptTokens,
     replicateModelConfig,
     buildSeedList,
@@ -49,10 +36,7 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
     buildUserPrefix,
     PutObjectCommand,
     MAX_REPLICATE_PROMPT_TOKENS,
-    aiCraftIllustrationPrompts,
   } = deps;
-
-  const { STORY_MUSIC_DEFAULT_INPUT } = buildStoryMusicDefaultInput(normalizePromptFragment);
 
   const router = Router();
 
@@ -106,63 +90,8 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
         });
       }
       if (!sceneItem && forceCurrent) {
-        const recentMessages = await queryBySkPrefix({
-          pk: buildMediaPk(userId),
-          skPrefix: storyMessagePrefix(sessionId),
-          limit: 6,
-          scanForward: false,
-        });
-        const latestAssistant = recentMessages.find((message) => message.role === "assistant");
-        const stateScene = buildSceneFragmentsFromStoryState(
-          sessionItem.storyState || {},
-          sessionItem.worldPrompt || ""
-        );
-        const mergedEnvironment = dedupeFragments([...stateScene.environment]);
-        const mergedAction = dedupeFragments([...stateScene.action]);
-        const compactCurrentScene = await aiCraftSceneContext({
-          scenePrompt: dedupeFragments([...mergedEnvironment, ...mergedAction]).join(", "),
-          sceneEnvironment: mergedEnvironment.join(", "),
-          sceneAction: mergedAction.join(", "),
-          contextText: latestAssistant?.content || "",
-          storyState: sessionItem.storyState || {},
-          lorebook: sessionItem.lorebook || {},
-        });
-        sceneId = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-        sceneItem = {
-          pk: buildMediaPk(userId),
-          sk: buildStorySceneSk(sessionId, sceneId),
-          type: "STORY_SCENE",
-          sessionId,
-          sceneId,
-          title: "Current moment",
-          description:
-            normalizePromptFragment(latestAssistant?.content || "") ||
-            `Current scene with ${sessionItem.protagonistName}.`,
-          prompt: compactCurrentScene.scenePrompt,
-          sceneEnvironment: compactCurrentScene.sceneEnvironment,
-          sceneAction: compactCurrentScene.sceneAction,
-          status: "pending",
-          createdAt: new Date().toISOString(),
-        };
-        await dynamoClient.send(
-          new PutCommand({
-            TableName: mediaTable,
-            Item: sceneItem,
-          })
-        );
-        const updatedSession = {
-          ...sessionItem,
-          sceneCount: (sessionItem.sceneCount || 0) + 1,
-          updatedAt: new Date().toISOString(),
-        };
-        await dynamoClient.send(
-          new PutCommand({
-            TableName: mediaTable,
-            Item: updatedSession,
-          })
-        );
-        sessionItem.sceneCount = updatedSession.sceneCount;
-        sessionItem.updatedAt = updatedSession.updatedAt;
+        sceneItem = await createCurrentScene(deps, { userId, sessionId, sessionItem });
+        sceneId = sceneItem.sceneId;
       }
       if (!sceneItem) {
         return res.status(404).json({ message: "Scene not found" });
@@ -205,114 +134,24 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
         });
       }
 
-      const characters = await ensureStoryCharacters();
-      const characterMap = new Map(characters.map((character) => [character.id, character]));
-      const resolvedProtagonistId =
-        sessionItem.protagonistId ||
-        (sessionItem.protagonistName?.toLowerCase().includes("frieren") ? "frieren" : "");
-      const characterItem = resolvedProtagonistId
-        ? await getItem({
-            pk: buildStoryCharacterPk(),
-            sk: buildStoryCharacterSk(resolvedProtagonistId),
-          })
-        : null;
-      const fallbackCharacter = characterMap.get(resolvedProtagonistId || "") || null;
-      const resolvedCharacter = characterItem || fallbackCharacter || characters[0] || null;
-
-      if (
-        resolvedCharacter?.identityPrompt &&
-        sessionItem.protagonistPrompt !== resolvedCharacter.identityPrompt
-      ) {
-        const updatedSession = {
-          ...sessionItem,
-          protagonistPrompt: resolvedCharacter.identityPrompt,
-          protagonistName: resolvedCharacter.name || sessionItem.protagonistName,
-          protagonistId: resolvedProtagonistId || resolvedCharacter.id || "",
-          updatedAt: new Date().toISOString(),
-        };
-        await dynamoClient.send(
-          new PutCommand({
-            TableName: mediaTable,
-            Item: updatedSession,
-          })
-        );
-        sessionItem.protagonistPrompt = updatedSession.protagonistPrompt;
-        sessionItem.protagonistName = updatedSession.protagonistName;
-      }
-
-      const recentMessages = await queryBySkPrefix({
-        pk: buildMediaPk(userId),
-        skPrefix: storyMessagePrefix(sessionId),
-        limit: 6,
-        scanForward: false,
-      });
-      const orderedRecent = recentMessages.slice().reverse();
-      const lastAssistant = recentMessages.find((message) => message.role === "assistant");
-      const contextLine = lastAssistant?.content
-        ? normalizePromptFragment(lastAssistant.content)
-        : "";
-      const summaryLine = sessionItem.summary ? normalizePromptFragment(sessionItem.summary) : "";
-      const recentTranscript = orderedRecent
-        .map((message) => {
-          const label = message.role === "user" ? "Player" : "Narrator";
-          return `${label}: ${normalizePromptFragment(message.content || "")}`;
-        })
-        .filter(Boolean)
-        .join(" ");
-      const isOpening = isOpeningSceneItem(normalizePromptFragment, sceneItem);
-      const openingSceneContextLimits = isOpening
-        ? {
-            maxEnvironmentFragments: STORY_OPENING_SCENE_MAX_ENVIRONMENT_FRAGMENTS,
-            maxActionFragments: STORY_OPENING_SCENE_MAX_ACTION_FRAGMENTS,
-          }
-        : {};
-      const compactSceneForPrompt = await aiCraftSceneContext({
-        scenePrompt: sceneItem.prompt || "",
-        sceneEnvironment: sceneItem.sceneEnvironment || "",
-        sceneAction: sceneItem.sceneAction || "",
-        contextText: contextLine || recentTranscript,
-        storyState: sessionItem.storyState || {},
-        lorebook: sessionItem.lorebook || {},
-        ...openingSceneContextLimits,
-      });
-      const sceneContextForPrompt = isOpening
-        ? compactScenePayload({
-            scenePrompt: compactSceneForPrompt.scenePrompt || sceneItem.prompt || "",
-            sceneEnvironment:
-              compactSceneForPrompt.sceneEnvironment || sceneItem.sceneEnvironment || "",
-            sceneAction: compactSceneForPrompt.sceneAction || sceneItem.sceneAction || "",
-            maxEnvironment: STORY_OPENING_SCENE_MAX_ENVIRONMENT_FRAGMENTS,
-            maxAction: STORY_OPENING_SCENE_MAX_ACTION_FRAGMENTS,
-          })
-        : compactSceneForPrompt;
-      const cleanScenePrompt = sceneContextForPrompt.scenePrompt || sceneItem.prompt || "";
-
-      const protagonistLine = sessionItem.protagonistPrompt?.includes(sessionItem.protagonistName)
-        ? sessionItem.protagonistPrompt
-        : `${sessionItem.protagonistName}, ${sessionItem.protagonistPrompt}`;
-
-      const identityBlock =
-        resolvedCharacter?.identityPrompt || sessionItem.protagonistPrompt || protagonistLine;
-
-      const draftedPrompts = await aiCraftIllustrationPrompts({
-        character: {
-          name: resolvedCharacter?.name || sessionItem.protagonistName || "",
-          identityPrompt: identityBlock,
-          signatureTraits: resolvedCharacter?.signatureTraits || "",
-          styleReference: resolvedCharacter?.styleReference || sessionItem.stylePrompt || "",
-          viewDistance: resolvedCharacter?.viewDistance || "",
-          eyeDetails: resolvedCharacter?.eyeDetails || "",
-          pose: resolvedCharacter?.pose || "",
-        },
-        scenePrompt: cleanScenePrompt,
-        sceneEnvironment:
-          sceneContextForPrompt.sceneEnvironment || sceneItem.sceneEnvironment || "",
-        sceneAction: sceneContextForPrompt.sceneAction || sceneItem.sceneAction || "",
-        summary: summaryLine,
-        latest: contextLine,
-        recent: recentTranscript,
+      const resolvedCharacter = await resolveSessionCharacter(deps, sessionItem);
+      const {
+        sceneContextForPrompt,
+        cleanScenePrompt,
+        summaryLine,
+        contextLine,
+        recentTranscript,
+        identityBlock,
+        draftedPrompts,
+      } = await buildIllustrationPromptContext(deps, {
+        userId,
+        sessionId,
+        sessionItem,
+        sceneItem,
+        resolvedCharacter,
         contextMode,
       });
+
       const positivePrompt = draftedPrompts?.positivePrompt || "";
       const negativePrompt = draftedPrompts?.negativePrompt || "";
       if (!positivePrompt || !negativePrompt) {
@@ -427,49 +266,23 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
           musicPayload: buildSceneMusicPayload(parseOptionalNumber, updatedScene, musicUrl),
         }),
         ...(debug
-          ? {
-              prompt: {
-                positive: trimmedPositivePrompt,
-                negative: trimmedNegativePrompt,
-              },
-              identity: identityBlock,
-              context: {
-                mode: contextMode,
-                summary: summaryLine,
-                latest: contextLine,
-                recent: recentTranscript,
-                scene: cleanScenePrompt,
-                sceneEnvironment: updatedScene.sceneEnvironment || "",
-                sceneAction: updatedScene.sceneAction || "",
-              },
-              promptPattern: [
-                "character (1girl, solo + name + recognizable)",
-                "shot range",
-                "focus/action",
-                "subject framing/facial fidelity",
-                "environment/background",
-                "visual/style",
-              ],
-              replicate: {
-                modelKey: requestedModelKey,
-                modelId: modelConfig.modelId,
-                input,
-                ...(promptWasTrimmed || negativeWasTrimmed
-                  ? {
-                      notice: [
-                        promptWasTrimmed
-                          ? `Positive prompt trimmed to ${MAX_REPLICATE_PROMPT_TOKENS} tokens for Replicate.`
-                          : null,
-                        negativeWasTrimmed
-                          ? `Negative prompt trimmed to ${MAX_REPLICATE_PROMPT_TOKENS} tokens for Replicate.`
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" "),
-                    }
-                  : {}),
-              },
-            }
+          ? buildIllustrationDebugPayload({
+              positivePrompt: trimmedPositivePrompt,
+              negativePrompt: trimmedNegativePrompt,
+              promptWasTrimmed,
+              negativeWasTrimmed,
+              maxPromptTokens: MAX_REPLICATE_PROMPT_TOKENS,
+              identityBlock,
+              contextMode,
+              summaryLine,
+              contextLine,
+              recentTranscript,
+              cleanScenePrompt,
+              updatedScene,
+              requestedModelKey,
+              modelConfig,
+              input,
+            })
           : {}),
       });
     } catch (error) {
