@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from "react";
+import type { FocusEvent } from "react";
+import type { GalleryImage } from "../../types/media";
 
 const AUTO_PAN_SPEED_PX_PER_SECOND = 20;
 const AUTO_PAN_EDGE_PAUSE_MS = 1300;
 
-const toDisplayLabel = (image, index) => {
+const toDisplayLabel = (image: GalleryImage | undefined, index: number): string => {
   const raw = image?.key || image?.url || "";
   const base = raw.split("/").pop() || `image-${index + 1}`;
   const withoutExt = base.replace(/\.[^/.]+$/, "");
@@ -11,6 +13,24 @@ const toDisplayLabel = (image, index) => {
   if (!normalized) return `Image ${index + 1}`;
   return normalized;
 };
+
+export interface SolarisImageWallProps {
+  images: GalleryImage[];
+  status?: string;
+  onOpenVideo?: (image: GalleryImage) => void;
+  onShareImage?: (image: GalleryImage) => void;
+  sharingImageKey?: string | null;
+  onDeleteImage?: (image: GalleryImage) => void;
+  onOpenImageModal?: (image: GalleryImage) => void;
+  onOpenLightbox?: (image: GalleryImage) => void;
+  onToggleFavorite?: (image: GalleryImage) => void;
+  onViewPrompt?: (image: GalleryImage) => void;
+  canLoadMore?: boolean;
+  onLoadMore?: () => void;
+  totalCount?: number;
+  showCta?: boolean;
+  onCta?: () => void;
+}
 
 function SolarisImageWall({
   images,
@@ -28,9 +48,9 @@ function SolarisImageWall({
   totalCount,
   showCta,
   onCta,
-}) {
+}: SolarisImageWallProps) {
   const resolvedTotal = typeof totalCount === "number" ? totalCount : images.length;
-  const wallRef = useRef(null);
+  const wallRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
   const edgePauseUntilRef = useRef(0);
@@ -46,7 +66,7 @@ function SolarisImageWall({
     lastFrameTimeRef.current = 0;
     edgePauseUntilRef.current = 0;
 
-    const tick = (timestamp) => {
+    const tick = (timestamp: number): void => {
       const maxScrollLeft = Math.max(0, wall.scrollWidth - wall.clientWidth);
       if (maxScrollLeft <= 1) {
         wall.scrollLeft = 0;
@@ -95,8 +115,8 @@ function SolarisImageWall({
     pausedRef.current = false;
   };
 
-  const handleBlurCapture = (event) => {
-    if (event.currentTarget.contains(event.relatedTarget)) {
+  const handleBlurCapture = (event: FocusEvent<HTMLDivElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
       return;
     }
     resumeAutoPan();

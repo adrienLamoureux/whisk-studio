@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # check-file-length.sh — Enforce a 500-line maximum per source file.
-# Exits 1 if any .js or .css file in backend/ or frontend/src/ exceeds the limit.
+# Exits 1 if any .js, .ts, .tsx or .css file in backend/ or frontend/src/ exceeds the limit.
 
 set -euo pipefail
 
@@ -35,9 +35,11 @@ echo ""
 echo "Checking backend/ JS files..."
 check_dir "$ROOT/backend" "*.js"
 
-echo "Checking frontend/src/ JS/JSX files..."
+echo "Checking frontend/src/ JS/JSX/TS/TSX files..."
 check_dir "$ROOT/frontend/src" "*.js"
 check_dir "$ROOT/frontend/src" "*.jsx"
+check_dir "$ROOT/frontend/src" "*.ts"
+check_dir "$ROOT/frontend/src" "*.tsx"
 
 echo "Checking frontend/src/ CSS files..."
 check_dir "$ROOT/frontend/src" "*.css"

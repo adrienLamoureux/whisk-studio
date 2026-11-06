@@ -1,6 +1,6 @@
 import { buildApiUrl, fetchJson } from "./apiClient";
 
-export const listPromptHelperOptions = (baseUrl) =>
+export const listPromptHelperOptions = (baseUrl: string) =>
   fetchJson(
     buildApiUrl(baseUrl, "/prompt-helper/options"),
     {},

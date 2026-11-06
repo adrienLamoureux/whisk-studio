@@ -7,13 +7,18 @@ import React, { useEffect, useRef } from "react";
  *
  * Renders nothing when `image` is falsy; expects `{ url, prompt? }`.
  */
-export default function Lightbox({ image, onClose }) {
-  const closeRef = useRef(null);
+export interface LightboxProps {
+  image?: { url?: string; prompt?: string } | null;
+  onClose?: () => void;
+}
+
+export default function Lightbox({ image, onClose }: LightboxProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!image) return undefined;
     closeRef.current?.focus();
-    const onKeyDown = (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKeyDown);

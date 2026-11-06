@@ -8,8 +8,9 @@
 
 import { buildApiUrl, fetchJson, postJson, putJson, deleteJson } from "./apiClient";
 import { AGENT_SESSIONS } from "../constants/api-routes";
+import type { ApiPayload } from "../types/api";
 
-const fetchPatchJson = (url, payload, errorMessage) =>
+const fetchPatchJson = (url: string, payload: ApiPayload, errorMessage: string) =>
   fetchJson(
     url,
     {
@@ -20,24 +21,27 @@ const fetchPatchJson = (url, payload, errorMessage) =>
     errorMessage
   );
 
-export const listAgentSessions = (apiBaseUrl) =>
+export const listAgentSessions = (apiBaseUrl: string) =>
   fetchJson(buildApiUrl(apiBaseUrl, AGENT_SESSIONS), {}, "Failed to load sessions.");
 
-export const createAgentSession = (apiBaseUrl, { sessionId, name }) =>
+export const createAgentSession = (
+  apiBaseUrl: string,
+  { sessionId, name }: { sessionId: string; name: string }
+) =>
   postJson(
     buildApiUrl(apiBaseUrl, AGENT_SESSIONS),
     { sessionId, name },
     "Failed to create session."
   );
 
-export const renameAgentSession = (apiBaseUrl, sessionId, name) =>
+export const renameAgentSession = (apiBaseUrl: string, sessionId: string, name: string) =>
   fetchPatchJson(
     buildApiUrl(apiBaseUrl, `${AGENT_SESSIONS}/${encodeURIComponent(sessionId)}`),
     { name },
     "Failed to rename session."
   );
 
-export const deleteAgentSession = (apiBaseUrl, sessionId) =>
+export const deleteAgentSession = (apiBaseUrl: string, sessionId: string) =>
   deleteJson(
     buildApiUrl(apiBaseUrl, `${AGENT_SESSIONS}/${encodeURIComponent(sessionId)}`),
     "Failed to delete session."
