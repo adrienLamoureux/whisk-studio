@@ -382,11 +382,12 @@ Navigation hub: [`docs/README.md`](./README.md) — organises docs by audience (
 
 Ranked on two lenses, interview showcase and real product, each scored 1 to 5. Rank is the sum;
 ties go to the smaller effort.
-The evidence for each item, the code defects found and the drift left in other docs are in
-[`proposals/roadmap-2026-11.md`](./proposals/roadmap-2026-11.md).
+The evidence for each item, a solution outline with its runtime cost, the code defects found and the
+drift left in other docs are in [`proposals/roadmap-2026-11.md`](./proposals/roadmap-2026-11.md).
+No item adds a fixed monthly cost.
 
 - Stream agent turns end to end (ConverseStream through a Lambda streaming handler behind API Gateway REST response streaming) so the first token shows while the turn is still running; this replaces the Lambda Function URL plan.
-- Move the agent default from Haiku 4.5 to Haiku 5.5, gated by the replay and live evals, with adaptive thinking switched off under the 400-token output cap.
+- Move the agent default from Haiku 4.5 to Haiku 5.5, gated by the replay and live evals, with adaptive thinking switched off under the 400-token output cap. The same pass refreshes the Replicate image and video models to newer releases of the same families, each after a priced test.
 - Make story illustrations character-consistent with a multi-reference image model such as Nano Banana Pro, starting from the empty `image_input` slot already in the registry.
 - Harden the agent evals with repeated trials (pass^k), separate capability and regression suites, and a transcript review before a score is trusted.
 - Map the agent's defences to the OWASP Top 10 for Agentic Applications and grow the injection and memory-poisoning cases in the golden set.
