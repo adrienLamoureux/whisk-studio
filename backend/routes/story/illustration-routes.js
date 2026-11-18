@@ -9,6 +9,7 @@ const {
   buildSceneResponse,
 } = require("./illustration-helpers");
 const { startSceneJob } = require("./scene-jobs");
+const { spendGuardFor, markSpendSkipped } = require("../../lib/spend-middleware");
 const { parseOptionalNumber, buildSceneMusicPayload } = require("./music-helpers");
 const { createCurrentScene } = require("./illustration-current-scene");
 const { resolveSessionCharacter } = require("./illustration-character");
@@ -40,7 +41,9 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
 
   const router = Router();
 
-  router.post("/sessions/:id/illustrations", deps.requireUserMiddleware, async (req, res) => {
+  const paidGuards = [deps.requireUserMiddleware, spendGuardFor(deps, "storyIllustration")];
+
+  router.post("/sessions/:id/illustrations", ...paidGuards, async (req, res) => {
     const userId = req.user?.sub;
     const sessionId = req.params.id;
     let sceneId = req.body?.sceneId;
@@ -119,6 +122,7 @@ module.exports = function registerStoryIllustrationRoutes(deps) {
           bucket,
           sceneItem
         );
+        markSpendSkipped(res);
         return res.json({
           sceneId,
           imageKey: sceneItem.imageKey,

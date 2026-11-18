@@ -18,6 +18,8 @@ const FRIENDLY_AGENT_ERRORS = {
   rate_limited: "Slow down a moment — Hiyori is catching her breath.",
   daily_cap_reached: "You've used up your daily token budget. Resets at midnight UTC.",
   image_daily_cap_reached: "You've hit today's image budget. Resets at midnight UTC.",
+  spend_budget_reached: "You've used today's spending budget. Resets at midnight UTC.",
+  spend_check_unavailable: "I can't check the spending budget right now. Try again shortly.",
 };
 
 export const friendlyAgentError = (code, fallback) => {
@@ -38,7 +40,13 @@ export const formatRetryDelay = (ms) => {
 };
 
 // Codes whose responses carry a meaningful retryAfterMs worth showing.
-const RETRY_AWARE_CODES = new Set(["rate_limited", "daily_cap_reached", "image_daily_cap_reached"]);
+const RETRY_AWARE_CODES = new Set([
+  "rate_limited",
+  "daily_cap_reached",
+  "image_daily_cap_reached",
+  "spend_budget_reached",
+  "spend_check_unavailable",
+]);
 
 /**
  * Error-object-aware variant: prefers the structured `errorCode` fetchJson

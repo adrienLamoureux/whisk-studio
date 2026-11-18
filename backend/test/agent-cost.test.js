@@ -283,33 +283,139 @@ test("checkDailyImageCap rolls over at UTC midnight (stale day ignored)", async 
   assert.equal(v.remaining, 50);
 });
 
-test("recordImage writes an atomic ADD on totalImages + sets imagesToday", async () => {
-  const client = makeStubClient();
+// ── Atomic counters: no read, conditional writes, rollover fallback ───────
+
+const conditionFailure = () =>
+  Object.assign(new Error("conditional"), { name: "ConditionalCheckFailedException" });
+
+// Scripted client: each outcome is "ok", "condition" or "boom", consumed per send.
+const makeScriptedClient = (outcomes, attributes) => {
+  const sent = [];
+  return {
+    sent,
+    send: async (cmd) => {
+      sent.push(cmd);
+      const outcome = outcomes[sent.length - 1] ?? "ok";
+      if (outcome === "condition") throw conditionFailure();
+      if (outcome === "boom") throw new Error("connection refused");
+      return { Attributes: attributes };
+    },
+  };
+};
+const names = (client) => client.sent.map((cmd) => cmd.constructor.name);
+
+test("record issues one conditional UpdateCommand on the same day", async () => {
+  const client = makeScriptedClient(["ok"]);
   const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
-  await c.recordImage("u1", 1);
-  const update = client.sent.find((cmd) => cmd?.constructor?.name === "UpdateCommand");
-  assert.ok(update);
-  assert.match(update.input.UpdateExpression, /ADD totalImages :n/);
-  assert.match(update.input.UpdateExpression, /imagesToday = :it/);
-  assert.equal(update.input.ExpressionAttributeValues[":n"], 1);
+  await c.record("u1", { inputTokens: 10, outputTokens: 5 });
+  assert.deepEqual(names(client), ["UpdateCommand"]);
+  const { UpdateExpression, ConditionExpression } = client.sent[0].input;
+  assert.match(UpdateExpression, /ADD .*tokensToday :tt SET lastUpdatedAt = :now/);
+  assert.doesNotMatch(UpdateExpression, /SET tokensToday/);
+  assert.equal(ConditionExpression, "dayStartedAt = :ds");
+  assert.equal(client.sent[0].input.ExpressionAttributeValues[":tt"], 15);
 });
 
-test("recordImage accumulates same-day counts without resetting", async () => {
-  const today = Date.now() - (Date.now() % (24 * 60 * 60 * 1000));
-  const client = makeStubClient({ getItem: { dayStartedAt: today, imagesToday: 12 } });
+test("record rolls the day over with a second write that sets tokensToday", async () => {
+  const client = makeScriptedClient(["condition", "ok"]);
   const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
-  await c.recordImage("u1", 1);
-  const update = client.sent.find((cmd) => cmd?.constructor?.name === "UpdateCommand");
-  assert.equal(update.input.ExpressionAttributeValues[":it"], 13);
+  await c.record("u1", { inputTokens: 10, outputTokens: 5 });
+  assert.deepEqual(names(client), ["UpdateCommand", "UpdateCommand"]);
+  const rollover = client.sent[1].input;
+  assert.match(rollover.UpdateExpression, /SET tokensToday = :tt, dayStartedAt = :ds/);
+  assert.match(rollover.ConditionExpression, /attribute_not_exists\(dayStartedAt\)/);
 });
 
-test("recordImage resets imagesToday after UTC midnight rollover", async () => {
-  const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
-  const client = makeStubClient({ getItem: { dayStartedAt: twoDaysAgo, imagesToday: 47 } });
+test("record retries the same-day write once when another request rolled the day", async () => {
+  const client = makeScriptedClient(["condition", "condition", "ok"]);
+  const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
+  await c.record("u1", { inputTokens: 10, outputTokens: 5 });
+  assert.equal(client.sent.length, 3);
+  assert.equal(client.sent[2].input.ConditionExpression, "dayStartedAt = :ds");
+});
+
+test("concurrent record calls never use SET tokensToday on the same day", async () => {
+  const client = makeScriptedClient([]);
+  const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
+  await Promise.all(
+    Array.from({ length: 5 }, () => c.record("u1", { inputTokens: 1, outputTokens: 1 }))
+  );
+  assert.equal(client.sent.length, 5);
+  for (const cmd of client.sent) assert.doesNotMatch(cmd.input.UpdateExpression, /SET tokensToday/);
+});
+
+test("recordImage adds imagesToday and totalImages atomically with no read", async () => {
+  const client = makeScriptedClient(["ok"]);
+  const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
+  await c.recordImage("u1", 2);
+  assert.deepEqual(names(client), ["UpdateCommand"]);
+  assert.match(client.sent[0].input.UpdateExpression, /ADD totalImages :n, imagesToday :it/);
+  assert.equal(client.sent[0].input.ExpressionAttributeValues[":it"], 2);
+});
+
+test("recordImage rolls imagesToday over after UTC midnight with a second write", async () => {
+  const client = makeScriptedClient(["condition", "ok"]);
   const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
   await c.recordImage("u1", 1);
-  const update = client.sent.find((cmd) => cmd?.constructor?.name === "UpdateCommand");
-  assert.equal(update.input.ExpressionAttributeValues[":it"], 1, "must reset to today's count");
+  assert.equal(client.sent.length, 2);
+  assert.match(client.sent[1].input.UpdateExpression, /SET imagesToday = :it, dayStartedAt = :ds/);
+});
+
+test("reserveImage allows under cap with one conditional write", async () => {
+  const client = makeScriptedClient(["ok"], { imagesToday: 3 });
+  const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
+  const v = await c.reserveImage("u1", { dailyImageCap: 10 });
+  assert.deepEqual(v, { allowed: true, remaining: 7, retryAfterMs: 0 });
+  const { ConditionExpression, ExpressionAttributeValues } = client.sent[0].input;
+  assert.equal(ConditionExpression, "dayStartedAt = :ds AND imagesToday <= :maxBefore");
+  assert.equal(ExpressionAttributeValues[":maxBefore"], 9);
+});
+
+test("reserveImage denies at cap", async () => {
+  const client = makeScriptedClient(["condition", "condition", "condition"]);
+  const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
+  const v = await c.reserveImage("u1", { dailyImageCap: 10 });
+  assert.equal(v.allowed, false);
+  assert.equal(v.reason, "cap_reached");
+  assert.equal(v.capacity, 10);
+  assert.equal(v.imagesToday, null);
+  assert.ok(v.retryAfterMs >= 1000);
+});
+
+test("reserveImage denies on a thrown error in closed mode, allows in open mode", async () => {
+  const limits = { imageDailyCap: 50, unavailableRetryAfterSeconds: 60 };
+  const closed = createAgentCost({
+    dynamoClient: makeScriptedClient(["boom"]),
+    mediaTable: "t",
+    limits: { ...limits, failMode: "closed" },
+  });
+  assert.deepEqual(await closed.reserveImage("u1"), {
+    allowed: false,
+    reason: "unavailable",
+    retryAfterMs: 60_000,
+  });
+  const open = createAgentCost({
+    dynamoClient: makeScriptedClient(["boom"]),
+    mediaTable: "t",
+    limits: { ...limits, failMode: "open" },
+  });
+  assert.equal((await open.reserveImage("u1")).allowed, true);
+});
+
+test("releaseImage subtracts one only for today and never rejects", async () => {
+  const client = makeScriptedClient(["ok"]);
+  const c = createAgentCost({ dynamoClient: client, mediaTable: "t" });
+  await c.releaseImage("u1");
+  assert.equal(client.sent[0].input.ExpressionAttributeValues[":minusOne"], -1);
+  assert.match(client.sent[0].input.ConditionExpression, /dayStartedAt = :ds/);
+  const failing = createAgentCost({ dynamoClient: makeScriptedClient(["boom"]), mediaTable: "t" });
+  await failing.releaseImage("u1");
+});
+
+test("reserveImage and releaseImage are no-ops without DynamoDB", async () => {
+  const c = createAgentCost({ dynamoClient: null, mediaTable: "" });
+  assert.equal((await c.reserveImage("u1")).allowed, true);
+  await c.releaseImage("u1");
 });
 
 test("recordImage is a silent no-op when DynamoDB errors", async () => {

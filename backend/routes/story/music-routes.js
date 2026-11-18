@@ -11,6 +11,7 @@ const {
 } = require("./music-helpers");
 const { createPersistStorySceneMusic } = require("./music-recommendation");
 const { startSceneJob, findSceneJob, settleSceneJob } = require("./scene-jobs");
+const { spendGuardFor } = require("../../lib/spend-middleware");
 
 module.exports = function registerStoryMusicRoutes(deps) {
   const {
@@ -41,6 +42,7 @@ module.exports = function registerStoryMusicRoutes(deps) {
   router.post(
     "/sessions/:id/scenes/:sceneId/music",
     deps.requireUserMiddleware,
+    spendGuardFor(deps, "storyMusic"),
     async (req, res) => {
       const userId = req.user?.sub;
       const sessionId = req.params.id;

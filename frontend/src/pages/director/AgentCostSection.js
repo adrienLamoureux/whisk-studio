@@ -3,22 +3,20 @@
  * Agent mode. Backed by GET /api/admin/agent/cost which scans the
  * `AGENT#COST` records across users and returns the top N by total tokens.
  *
- * Cost columns are calculated client-side using a rough Claude Haiku 4.5
- * price (input $0.80 / Mtok, output $4.00 / Mtok) — admin can adjust the
- * constants here if the model changes. This is a budget-monitoring view,
- * not billing — accuracy is "good enough to spot outliers."
+ * Cost columns are calculated client-side from the per-million-token rates
+ * the endpoint returns in `rates.llm` (single price table in the backend's
+ * config/pricing.js). This is a budget-monitoring view, not billing —
+ * accuracy is "good enough to spot outliers."
  */
 
 import React, { useState, useEffect, useCallback } from "react";
 import { fetchAgentCost } from "../../services/operations";
 import { useNotify } from "../../components/sakura/NotificationStack";
 
-// Rough Claude Haiku 4.5 pricing (per million tokens) — adjust if model changes
-const INPUT_USD_PER_MTOK = 0.8;
-const OUTPUT_USD_PER_MTOK = 4.0;
-
-const formatCost = (inputTokens, outputTokens) => {
-  const usd = (inputTokens * INPUT_USD_PER_MTOK + outputTokens * OUTPUT_USD_PER_MTOK) / 1_000_000;
+const formatCost = (inputTokens, outputTokens, llmRates) => {
+  if (!llmRates) return "—";
+  const usd =
+    (inputTokens * llmRates.inputUsdPerMTok + outputTokens * llmRates.outputUsdPerMTok) / 1_000_000;
   if (usd < 0.001) return "<$0.001";
   if (usd < 1) return `$${usd.toFixed(3)}`;
   return `$${usd.toFixed(2)}`;
@@ -56,6 +54,7 @@ export default function AgentCostSection({ apiBaseUrl }) {
     load();
   }, [load]);
 
+  const llmRates = data.rates?.llm || null;
   const total = data.items.reduce(
     (acc, it) => {
       acc.inputTokens += it.inputTokens || 0;
@@ -98,9 +97,16 @@ export default function AgentCostSection({ apiBaseUrl }) {
               <strong>{total.turnCount}</strong> turns
             </span>
             <span>
-              ≈ <strong>{formatCost(total.inputTokens, total.outputTokens)}</strong>
+              ≈ <strong>{formatCost(total.inputTokens, total.outputTokens, llmRates)}</strong>
             </span>
           </div>
+          <p style={{ color: "var(--skr-text-tertiary)", fontSize: 11, marginTop: 6 }}>
+            {llmRates
+              ? `Rates: $${llmRates.inputUsdPerMTok} in / $${llmRates.outputUsdPerMTok} out per Mtok${
+                  llmRates.placeholder ? " (placeholder, not confirmed)" : ""
+                }`
+              : "Rates unavailable"}
+          </p>
 
           <table className="skr-agent-cost-table">
             <thead>
@@ -119,7 +125,7 @@ export default function AgentCostSection({ apiBaseUrl }) {
                   <td>{formatTokens(it.inputTokens)}</td>
                   <td>{formatTokens(it.outputTokens)}</td>
                   <td>{it.turnCount}</td>
-                  <td>{formatCost(it.inputTokens, it.outputTokens)}</td>
+                  <td>{formatCost(it.inputTokens, it.outputTokens, llmRates)}</td>
                 </tr>
               ))}
             </tbody>

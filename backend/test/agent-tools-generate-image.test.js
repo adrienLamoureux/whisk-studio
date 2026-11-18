@@ -55,13 +55,14 @@ test("dispatchGenerateImage refuses when daily image cap is reached", async () =
       },
     },
     agentCost: {
-      checkDailyImageCap: async () => ({
+      reserveImage: async () => ({
         allowed: false,
+        reason: "cap_reached",
         capacity: 50,
         imagesToday: 50,
         retryAfterMs: 60_000,
       }),
-      recordImage: async () => {},
+      releaseImage: async () => {},
     },
   };
   const out = await dispatchGenerateImage({
@@ -76,15 +77,30 @@ test("dispatchGenerateImage refuses when daily image cap is reached", async () =
   assert.equal(replicateCalled, false, "must not call Replicate when capped");
 });
 
-test("dispatchGenerateImage proceeds when under cap and records the image", async () => {
+const allowedCharge = {
+  allowed: true,
+  reason: "charged",
+  scope: "user",
+  microUsd: 12_000,
+  dayKey: "2026-11-16",
+  limitMicroUsd: 3_000_000,
+  spentMicroUsd: 12_000,
+  retryAfterMs: 0,
+};
+
+test("dispatchGenerateImage proceeds when under cap and reserves the image", async () => {
   process.env.REPLICATE_API_TOKEN = "fake-token";
-  let recorded = 0;
+  let reserved = 0;
+  let released = 0;
   const deps = {
     ...baseDeps(),
     agentCost: {
-      checkDailyImageCap: async () => ({ allowed: true, remaining: 49 }),
-      recordImage: async () => {
-        recorded += 1;
+      reserveImage: async () => {
+        reserved += 1;
+        return { allowed: true, remaining: 49, retryAfterMs: 0 };
+      },
+      releaseImage: async () => {
+        released += 1;
       },
     },
   };
@@ -94,10 +110,94 @@ test("dispatchGenerateImage proceeds when under cap and records the image", asyn
     userId: "u1",
   });
   assert.equal(out.ok, true);
-  // Microtask flush — recordImage is fire-and-forget so let any pending
-  // promise resolve before asserting.
-  await new Promise((r) => setImmediate(r));
-  assert.equal(recorded, 1, "must increment the daily counter on Replicate success");
+  assert.equal(reserved, 1, "must reserve one image before calling Replicate");
+  assert.equal(released, 0, "must keep the reservation on success");
+});
+
+test("budget denial releases the image reservation", async () => {
+  process.env.REPLICATE_API_TOKEN = "fake-token";
+  let replicateCalled = false;
+  let released = 0;
+  const deps = {
+    ...baseDeps(),
+    replicateClient: {
+      predictions: {
+        create: async () => {
+          replicateCalled = true;
+          return { id: "p-1", status: "starting" };
+        },
+      },
+    },
+    agentCost: {
+      reserveImage: async () => ({ allowed: true, remaining: 49, retryAfterMs: 0 }),
+      releaseImage: async () => {
+        released += 1;
+      },
+    },
+    spendBudget: {
+      charge: async () => ({
+        allowed: false,
+        reason: "budget_exhausted",
+        scope: "user",
+        microUsd: 12_000,
+        dayKey: "2026-11-16",
+        limitMicroUsd: 3_000_000,
+        spentMicroUsd: null,
+        retryAfterMs: 5_000,
+      }),
+      refund: async () => {},
+    },
+  };
+  const out = await dispatchGenerateImage({
+    args: { prompt: "test", style: "anime", aspect: "3:4" },
+    deps,
+    userId: "u1",
+  });
+  assert.equal(out.ok, false);
+  assert.equal(out.error, "spend_budget_reached");
+  assert.equal(out.limitUsd, 3);
+  assert.equal(out.retryAfterMs, 5_000);
+  assert.equal(released, 1, "must release the reservation");
+  assert.equal(replicateCalled, false, "must not call Replicate when over budget");
+});
+
+test("replicate failure refunds the charge", async () => {
+  process.env.REPLICATE_API_TOKEN = "fake-token";
+  let released = 0;
+  const refunds = [];
+  const deps = {
+    ...baseDeps(),
+    replicateClient: {
+      predictions: {
+        create: async () => {
+          throw new Error("replicate down");
+        },
+      },
+    },
+    agentCost: {
+      reserveImage: async () => ({ allowed: true, remaining: 49, retryAfterMs: 0 }),
+      releaseImage: async () => {
+        released += 1;
+      },
+    },
+    spendBudget: {
+      charge: async () => allowedCharge,
+      refund: async (args) => {
+        refunds.push(args);
+      },
+    },
+  };
+  const out = await dispatchGenerateImage({
+    args: { prompt: "test", style: "anime", aspect: "3:4" },
+    deps,
+    userId: "u1",
+  });
+  assert.equal(out.ok, false);
+  assert.equal(out.error, "replicate down");
+  assert.equal(released, 1);
+  assert.deepEqual(refunds, [
+    { scope: { kind: "user", id: "u1" }, dayKey: "2026-11-16", microUsd: 12_000 },
+  ]);
 });
 
 test("dispatchGenerateImage tolerates a missing agentCost dep (fail open)", async () => {

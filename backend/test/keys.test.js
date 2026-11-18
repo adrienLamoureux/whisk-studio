@@ -22,6 +22,8 @@ const {
   buildCompanionMemorySk,
   buildCompanionMsgSk,
   companionMsgPrefix,
+  buildAnonSpendPk,
+  buildDailySpendSk,
 } = require("../lib/keys");
 
 // ── buildUserPrefix ────────────────────────────────────────────────────────
@@ -198,4 +200,15 @@ test("companionMsgPrefix returns COMPANION#<model>#MSG# prefix", () => {
 
 test("companionMsgPrefix defaults to hiyori_free model", () => {
   assert.equal(companionMsgPrefix(), "COMPANION#hiyori_free#MSG#");
+});
+
+// ── spend budget keys ──────────────────────────────────────────────────────
+
+test("buildAnonSpendPk returns SPEND#ANON", () => {
+  assert.equal(buildAnonSpendPk(), "SPEND#ANON");
+});
+
+test("buildDailySpendSk prefixes the UTC day key", () => {
+  assert.equal(buildDailySpendSk("2026-11-16"), "SPEND#DAY#2026-11-16");
+  assert.equal(buildDailySpendSk(), "SPEND#DAY#");
 });

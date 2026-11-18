@@ -92,6 +92,7 @@ const { createJobStore } = require("./jobs");
 const { createAgentState } = require("./agent-state");
 const { createAgentRateLimit } = require("./agent-rate-limit");
 const { createAgentCost } = require("./agent-cost");
+const { createSpendBudget } = require("./spend-budget");
 const { createAgentSessions } = require("./agent-sessions");
 const { createMediaStore } = require("./media-store");
 const { createStorySeedStore } = require("./story-seed-store");
@@ -180,6 +181,7 @@ const createDeps = () => {
   // agentCost must be constructed first so agentMemory can bill compaction
   // summariser tokens against the user's daily cap (every ~30 turns).
   const agentCost = createAgentCost({ dynamoClient, mediaTable });
+  const spendBudget = createSpendBudget({ dynamoClient, mediaTable });
   const agentMemory = createAgentMemory({
     dynamoClient,
     mediaTable,
@@ -334,6 +336,7 @@ const createDeps = () => {
     agentState,
     agentRateLimit,
     agentCost,
+    spendBudget,
     agentSessions,
     putMediaItem: mediaStore.putMediaItem,
     deleteMediaItem: mediaStore.deleteMediaItem,

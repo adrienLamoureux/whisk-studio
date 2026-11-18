@@ -214,7 +214,8 @@ module.exports = (app, deps) => {
     // ── Daily token spend cap (soft budget) ──────────────────────────────
     // Distinct from the request bucket — caps daily Bedrock token usage so
     // runaway loops can't bankrupt a user. 200k tokens/day default
-    // (~$0.20 at Haiku 4.5 prices). Fails open on DB errors.
+    // ($0.20 all-input to $1.00 all-output at Haiku 4.5 list rates).
+    // Fails open on DB errors.
     if (agentCost) {
       const dailyVerdict = await agentCost.checkDailyCap(userId).catch(() => ({ allowed: true }));
       if (!dailyVerdict.allowed) {

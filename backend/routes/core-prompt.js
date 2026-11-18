@@ -1,4 +1,7 @@
+const { spendGuardFor } = require("../lib/spend-middleware");
+
 module.exports = (app, deps) => {
+  const llmGuard = spendGuardFor(deps, "bedrockLlmCall");
   const {
     mediaTable,
     ensurePromptHelperOptions,
@@ -57,7 +60,7 @@ module.exports = (app, deps) => {
     }
   });
 
-  app.post("/bedrock/prompt-helper", async (req, res) => {
+  app.post("/bedrock/prompt-helper", llmGuard, async (req, res) => {
     const background = req.body?.background?.trim();
     const character = req.body?.character?.trim();
     const pose = req.body?.pose?.trim();

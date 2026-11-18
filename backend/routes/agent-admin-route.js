@@ -12,6 +12,7 @@
  */
 
 const { requireUserMiddleware, requireAdminMiddleware } = require("../lib/auth");
+const { listRates } = require("../config/pricing");
 const { getAgentModelId, setAgentModelId } = require("../lib/agent-config");
 
 module.exports = (app, deps) => {
@@ -67,6 +68,7 @@ module.exports = (app, deps) => {
         items: sorted,
         scannedCount: result.scannedCount || 0,
         truncated: Boolean(result.truncated),
+        rates: listRates(),
       });
     }
   );

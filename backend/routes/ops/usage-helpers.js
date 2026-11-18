@@ -1,40 +1,13 @@
 "use strict";
 
+const { estimateUsd } = require("../../config/pricing");
+
 /**
  * usage-helpers.js — cost estimation utilities for the usage dashboard.
  *
- * MODEL_COSTS maps model keys (or provider prefixes) to an estimated USD cost
- * per output unit. Values approximate public Replicate / Bedrock / CivitAI
- * pricing as of 2026.
+ * Prices come from config/pricing.js, the single price table shared with the
+ * daily dollar budget and the Sanctum cost view.
  */
-
-// Cost per output unit in USD. Keys match the `model` field on JOB# items.
-const MODEL_COSTS = {
-  // Replicate image models
-  animagine: 0.003,
-  "wai-nsfw-illustrious-v11": 0.004,
-  "wai-nsfw-illustrious-v12": 0.004,
-  "seedream-4.5": 0.005,
-  // Replicate video models
-  "wan-2.2-i2v-fast": 0.04,
-  "kling-v2.6": 0.08,
-  "seedance-1.5-pro": 0.06,
-  // Bedrock
-  "titan-image": 0.01,
-  "nova-reel": 0.08,
-  // CivitAI
-  civitai: 0.005,
-  // Gradio
-  gradio: 0.002,
-};
-
-// Provider-level fallback costs (used when model key isn't found).
-const PROVIDER_FALLBACK_COSTS = {
-  replicate: 0.004,
-  bedrock: 0.01,
-  civitai: 0.005,
-  gradio: 0.002,
-};
 
 /**
  * Estimate cost for one job item based on model + provider fields.
@@ -53,13 +26,7 @@ const estimateJobCost = (item = {}) => {
     .toLowerCase()
     .trim();
 
-  if (model && model in MODEL_COSTS) {
-    return MODEL_COSTS[model];
-  }
-  if (provider && provider in PROVIDER_FALLBACK_COSTS) {
-    return PROVIDER_FALLBACK_COSTS[provider];
-  }
-  return 0;
+  return estimateUsd({ priceKey: model, provider, count: 1 });
 };
 
 /**
@@ -129,8 +96,6 @@ const aggregateUsage = (items = []) => {
 };
 
 module.exports = {
-  MODEL_COSTS,
-  PROVIDER_FALLBACK_COSTS,
   estimateJobCost,
   parseUsageWindow,
   aggregateUsage,

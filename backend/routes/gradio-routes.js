@@ -1,3 +1,5 @@
+const { spendGuardFor } = require("../lib/spend-middleware");
+
 module.exports = (app, deps) => {
   const {
     gradioSpaceConfig,
@@ -13,7 +15,9 @@ module.exports = (app, deps) => {
     GetObjectCommand,
   } = deps;
 
-  app.post("/gradio/image/generate", deps.requireUserMiddleware, async (req, res) => {
+  const paidGuards = [deps.requireUserMiddleware, spendGuardFor(deps, "gradioImage")];
+
+  app.post("/gradio/image/generate", ...paidGuards, async (req, res) => {
     const mediaBucket = process.env.MEDIA_BUCKET;
     const userId = req.user?.sub;
     const modelKey = req.body?.model || "wainsfw";

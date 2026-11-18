@@ -1,4 +1,5 @@
 const { createCivitaiClient } = require("../lib/civitai-client");
+const { spendGuardFor } = require("../lib/spend-middleware");
 const { LORA_MODALITY_IMAGE, LORA_PROFILE_TYPE, LORA_STRENGTH_DEFAULT } = require("../config/lora");
 const {
   applyCharacterProfileToReplicateInput,
@@ -109,7 +110,9 @@ module.exports = (app, deps) => {
   const defaultModelKey = civitaiModelKeys[0] || "";
   const imageLoraSupportedModels = getLoraSupportedModelKeys(civitaiModelConfig);
 
-  app.post("/civitai/image/generate", deps.requireUserMiddleware, async (req, res) => {
+  const paidGuards = [deps.requireUserMiddleware, spendGuardFor(deps, "civitaiImage")];
+
+  app.post("/civitai/image/generate", ...paidGuards, async (req, res) => {
     const mediaBucket = process.env.MEDIA_BUCKET;
     const userId = req.user?.sub;
     const apiToken = process.env.CIVITAI_API_TOKEN;

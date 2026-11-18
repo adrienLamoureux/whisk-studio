@@ -87,6 +87,19 @@ test("GET /api/admin/agent/cost returns items sorted by total tokens desc", asyn
   assert.equal(res.out.payload.truncated, false);
 });
 
+test("GET /api/admin/agent/cost returns shared rates", async () => {
+  const { LLM_TOKEN_PRICES } = require("../config/pricing");
+  const { router } = buildRouter({
+    agentCost: { scanAll: async () => ({ items: [], scannedCount: 0, truncated: false }) },
+  });
+  const handler = getRouterHandler(router, "get", "/api/admin/agent/cost");
+  const res = createRes();
+  await handler({ query: {}, user: { sub: "admin", isAdmin: true } }, res);
+  const { rates } = res.out.payload;
+  assert.equal(rates.llm.inputUsdPerMTok, LLM_TOKEN_PRICES.inputUsdPerMTok);
+  assert.ok(rates.models.some((m) => m.key === "nova-reel"));
+});
+
 test("GET /api/admin/agent/cost clamps limit to [1, 200]", async () => {
   let receivedOpts = null;
   const { router } = buildRouter({
