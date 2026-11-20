@@ -226,19 +226,33 @@ test("PUT /director/features rejects unknown flag names", async () => {
 
 test("usage-helpers: estimateJobCost returns model cost for known model", () => {
   const { estimateJobCost } = require("../routes/ops/usage-helpers");
+  const { estimateUsd } = require("../config/pricing");
   const cost = estimateJobCost({ model: "animagine", provider: "replicate" });
-  assert.equal(cost, 0.003);
+  assert.equal(cost, estimateUsd({ priceKey: "animagine", provider: "replicate" }));
+  assert.ok(cost > 0);
+});
+
+test("usage-helpers: estimateJobCost prices a clip by its seconds", () => {
+  const { estimateJobCost } = require("../routes/ops/usage-helpers");
+  const { estimateUsd } = require("../config/pricing");
+  assert.equal(estimateJobCost({ model: "nova-reel" }), estimateUsd({ priceKey: "nova-reel" }));
+  assert.equal(estimateJobCost({ model: "nova-reel" }), 0.48);
+  assert.equal(estimateJobCost({ model: "veo-3.1-fast" }), 1.2);
 });
 
 test("usage-helpers: estimateJobCost falls back to provider cost for unknown model", () => {
   const { estimateJobCost } = require("../routes/ops/usage-helpers");
+  const { estimateUsd } = require("../config/pricing");
   const cost = estimateJobCost({ model: "mystery-model", provider: "replicate" });
-  assert.equal(cost, 0.004);
+  assert.equal(cost, estimateUsd({ provider: "replicate" }));
+  assert.ok(cost > 0);
 });
 
 test("usage-helpers: estimateJobCost returns 0 for unknown model and provider", () => {
   const { estimateJobCost } = require("../routes/ops/usage-helpers");
+  const { estimateUsd } = require("../config/pricing");
   const cost = estimateJobCost({ model: "unknown", provider: "unknown" });
+  assert.equal(cost, estimateUsd({ priceKey: "unknown", provider: "unknown" }));
   assert.equal(cost, 0);
 });
 

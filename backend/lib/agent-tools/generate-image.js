@@ -13,6 +13,8 @@
  * future tool calls bias toward what they've actually chosen.
  */
 
+const { MICRO_USD_PER_USD } = require("../../config/pricing");
+
 // ─── Style → Replicate model key ────────────────────────────────────────────
 const STYLE_TO_MODEL_KEY = {
   anime: "wai-nsfw-illustrious-v11",
@@ -122,24 +124,6 @@ const dispatchGenerateImage = async ({ args, deps, userId }) => {
   const prompt = String(args.prompt || "").trim();
   if (!prompt) return { ok: false, error: "prompt_required" };
 
-  // ── Daily image cap — bounds Replicate spend per user (the dominant cost
-  // driver). Distinct from the token cap so power users can chat extensively
-  // without burning image budget. Fails open on DB errors.
-  if (deps.agentCost?.checkDailyImageCap) {
-    const verdict = await deps.agentCost
-      .checkDailyImageCap(userId)
-      .catch(() => ({ allowed: true }));
-    if (!verdict.allowed) {
-      return {
-        ok: false,
-        error: "image_daily_cap_reached",
-        capacity: verdict.capacity,
-        imagesToday: verdict.imagesToday,
-        retryAfterMs: verdict.retryAfterMs,
-      };
-    }
-  }
-
   let modelKey;
   let modelConfig;
   let width;
@@ -153,6 +137,64 @@ const dispatchGenerateImage = async ({ args, deps, userId }) => {
   } catch (err) {
     return { ok: false, error: err?.message || "model_resolve_failed" };
   }
+
+  // ── Daily image cap — bounds Replicate spend per user. Reserved atomically
+  // (count + 1 before the call); released if the call never starts.
+  const reserved = Boolean(deps.agentCost?.reserveImage);
+  if (reserved) {
+    const verdict = await deps.agentCost.reserveImage(userId);
+    if (!verdict.allowed) {
+      if (verdict.reason === "unavailable") {
+        return {
+          ok: false,
+          error: "spend_check_unavailable",
+          retryAfterMs: verdict.retryAfterMs,
+        };
+      }
+      return {
+        ok: false,
+        error: "image_daily_cap_reached",
+        capacity: verdict.capacity,
+        imagesToday: verdict.imagesToday,
+        retryAfterMs: verdict.retryAfterMs,
+      };
+    }
+  }
+  const releaseImage = () => (reserved ? deps.agentCost.releaseImage?.(userId) : undefined);
+
+  // ── Daily dollar budget (per user). Refunded if Replicate never starts.
+  const spendVerdict = await deps.spendBudget?.charge({
+    scope: { kind: "user", id: userId },
+    priceKey: modelKey,
+    provider: "replicate",
+    count: 1,
+  });
+  if (spendVerdict && !spendVerdict.allowed) {
+    await releaseImage();
+    if (spendVerdict.reason === "unavailable") {
+      return {
+        ok: false,
+        error: "spend_check_unavailable",
+        retryAfterMs: spendVerdict.retryAfterMs,
+      };
+    }
+    return {
+      ok: false,
+      error: "spend_budget_reached",
+      retryAfterMs: spendVerdict.retryAfterMs,
+      limitUsd: spendVerdict.limitMicroUsd / MICRO_USD_PER_USD,
+    };
+  }
+  const undoSpend = async () => {
+    await releaseImage();
+    if (spendVerdict?.microUsd > 0) {
+      await deps.spendBudget.refund({
+        scope: { kind: "user", id: userId },
+        dayKey: spendVerdict.dayKey,
+        microUsd: spendVerdict.microUsd,
+      });
+    }
+  };
 
   const trimmedPrompt = clampPromptTokens ? clampPromptTokens(prompt) : prompt;
   const batchId = buildImageBatchId();
@@ -181,15 +223,13 @@ const dispatchGenerateImage = async ({ args, deps, userId }) => {
       headers: { Prefer: "wait=5", "Cancel-After": "10m" },
     });
   } catch (err) {
+    await undoSpend();
     return { ok: false, error: err?.message || "replicate_create_failed" };
   }
 
-  if (!prediction?.id) return { ok: false, error: "replicate_no_prediction" };
-
-  // Count against the daily image cap once Replicate has accepted the
-  // prediction (covers both fast-path and async — we already committed spend).
-  if (deps.agentCost?.recordImage) {
-    deps.agentCost.recordImage(userId, 1).catch(() => {});
+  if (!prediction?.id) {
+    await undoSpend();
+    return { ok: false, error: "replicate_no_prediction" };
   }
 
   if (deps.agentState && userId) {

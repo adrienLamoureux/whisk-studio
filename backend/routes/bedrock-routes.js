@@ -1,3 +1,5 @@
+const { spendGuardFor } = require("../lib/spend-middleware");
+
 module.exports = (app, deps) => {
   const {
     bedrockClient,
@@ -120,7 +122,9 @@ module.exports = (app, deps) => {
     }
   });
 
-  app.post("/bedrock/image/generate", deps.requireUserMiddleware, async (req, res) => {
+  const paidGuards = [deps.requireUserMiddleware, spendGuardFor(deps, "bedrockImage")];
+
+  app.post("/bedrock/image/generate", ...paidGuards, async (req, res) => {
     const mediaBucket = process.env.MEDIA_BUCKET;
     const userId = req.user?.sub;
     const modelKey = req.body?.model || "titan";

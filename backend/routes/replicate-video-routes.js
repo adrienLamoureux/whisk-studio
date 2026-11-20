@@ -8,6 +8,8 @@ const {
   applyCharacterProfileToReplicateInput,
 } = require("../lib/lora-utils");
 
+const { spendGuardFor } = require("../lib/spend-middleware");
+
 module.exports = (app, deps) => {
   const {
     ensureUserKey,
@@ -51,7 +53,9 @@ module.exports = (app, deps) => {
     defaultNegativePrompt: "",
   });
 
-  app.post("/replicate/video/generate", deps.requireUserMiddleware, async (req, res) => {
+  const paidGuards = [deps.requireUserMiddleware, spendGuardFor(deps, "replicateVideo")];
+
+  app.post("/replicate/video/generate", ...paidGuards, async (req, res) => {
     const mediaBucket = process.env.MEDIA_BUCKET;
     const userId = req.user?.sub;
     const apiToken = process.env.REPLICATE_API_TOKEN;

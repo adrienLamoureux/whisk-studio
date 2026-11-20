@@ -8,6 +8,7 @@ const {
 } = require("./illustration-helpers");
 const { getFlags } = require("../../lib/feature-flags");
 const { startSceneJob, findSceneJob, settleSceneJob } = require("./scene-jobs");
+const { spendGuardFor } = require("../../lib/spend-middleware");
 
 module.exports = function registerStoryAnimationRoutes(deps) {
   const {
@@ -85,6 +86,7 @@ module.exports = function registerStoryAnimationRoutes(deps) {
   router.post(
     "/sessions/:id/scenes/:sceneId/animation",
     deps.requireUserMiddleware,
+    spendGuardFor(deps, "storyAnimation"),
     async (req, res) => {
       const { enableStoryAnimations } = await getFlags(deps);
       if (!enableStoryAnimations) {

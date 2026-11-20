@@ -1,4 +1,8 @@
 const { getFlags } = require("../lib/feature-flags");
+const { bedrockVideoConfig } = require("../config/models");
+const { spendGuardFor } = require("../lib/spend-middleware");
+
+const novaReel = bedrockVideoConfig["nova-reel"];
 
 module.exports = (app, deps) => {
   const {
@@ -16,7 +20,9 @@ module.exports = (app, deps) => {
     bedrockClient,
   } = deps;
 
-  app.post("/bedrock/nova-reel/image-to-video-s3", deps.requireUserMiddleware, async (req, res) => {
+  const paidGuards = [deps.requireUserMiddleware, spendGuardFor(deps, "novaReel")];
+
+  app.post("/bedrock/nova-reel/image-to-video-s3", ...paidGuards, async (req, res) => {
     const { enableNovaReelVideos } = await getFlags(deps);
     if (!enableNovaReelVideos) {
       return res.status(503).json({ error: "Feature disabled" });
@@ -57,8 +63,8 @@ module.exports = (app, deps) => {
     // const outputS3Uri = "s3://staticwebawsaistack-mediabucketbcbb02ba-crjbe2oeh2eo/videos/"
     const modelId =
       requestedModel === "nova-reel"
-        ? "amazon.nova-reel-v1:1"
-        : process.env.BEDROCK_MODEL_ID || "amazon.nova-reel-v1:1";
+        ? novaReel.modelId
+        : process.env.BEDROCK_MODEL_ID || novaReel.modelId;
     const inputExtension = inputKey.split(".").pop()?.toLowerCase();
     let imageFormat = inputExtension === "jpg" ? "jpeg" : inputExtension;
     if (imageFormat !== "jpeg" && imageFormat !== "png") {
@@ -68,7 +74,7 @@ module.exports = (app, deps) => {
     }
     const seed = req.body?.videoGenerationConfig?.seed ?? Math.floor(Math.random() * 2147483647);
     const defaultVideoConfig = {
-      durationSeconds: 6,
+      durationSeconds: novaReel.durationSeconds,
       fps: 24,
       dimension: "1280x720",
       seed,

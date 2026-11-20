@@ -58,7 +58,12 @@ const createStubDeps = () => {
     queryBySkPrefix: async () => SESSIONS,
     buildMediaPk: (userId) => `USER#${userId}`,
     agentState: { patch: async () => ({}), load: async () => null },
-    agentCost: { checkDailyImageCap: async () => ({ allowed: true }), recordImage: async () => {} },
+    agentCost: {
+      checkDailyImageCap: async () => ({ allowed: true }),
+      recordImage: async () => {},
+      reserveImage: async () => ({ allowed: true }),
+      releaseImage: async () => {},
+    },
     s3Client: {
       send: async () => {
         calls.s3 += 1;

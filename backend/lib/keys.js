@@ -60,6 +60,13 @@ const buildAgentCostSk = () => "AGENT#COST";
 // Holds { imagesToday, dayStartedAt, totalImages, lastUpdatedAt }
 const buildAgentImageCountSk = () => "AGENT#IMG_COUNT";
 
+// Daily dollar budget (lib/spend-budget.js): one item per scope per UTC day.
+// User scope uses pk = buildMediaPk(sub); visitors who are not signed in share
+// one pk. dayKey is "YYYY-MM-DD" (UTC).
+// Holds { spentMicroUsd, chargeCount, lastUpdatedAt }
+const buildAnonSpendPk = () => "SPEND#ANON";
+const buildDailySpendSk = (dayKey = "") => `SPEND#DAY#${dayKey}`;
+
 // Named agent conversation sessions (v1.7). The session id doubles as the
 // memory namespace — agent-memory uses it where it used to use "modelId".
 // Holds { name, createdAt, lastUsedAt }.
@@ -92,6 +99,8 @@ module.exports = {
   buildAgentRateLimitSk,
   buildAgentCostSk,
   buildAgentImageCountSk,
+  buildAnonSpendPk,
+  buildDailySpendSk,
   buildAgentSessionSk,
   agentSessionPrefix,
 };

@@ -100,6 +100,22 @@ const createMockDeps = (overrides = {}) => {
     checkDailyCap: async () => ({ allowed: true, remaining: null, retryAfterMs: 0 }),
     checkDailyImageCap: async () => ({ allowed: true, remaining: null, retryAfterMs: 0 }),
     recordImage: async () => {},
+    reserveImage: async () => ({ allowed: true, remaining: null, retryAfterMs: 0 }),
+    releaseImage: async () => {},
+  };
+
+  const spendBudget = {
+    charge: async () => ({
+      allowed: true,
+      reason: "disabled",
+      scope: "user",
+      microUsd: 0,
+      dayKey: "",
+      limitMicroUsd: 0,
+      spentMicroUsd: null,
+      retryAfterMs: 0,
+    }),
+    refund: async () => {},
   };
 
   const agentSessions = {
@@ -323,6 +339,7 @@ const createMockDeps = (overrides = {}) => {
     agentState,
     agentRateLimit,
     agentCost,
+    spendBudget,
     agentSessions,
     putMediaItem: mediaStore.putMediaItem,
     deleteMediaItem: mediaStore.deleteMediaItem,

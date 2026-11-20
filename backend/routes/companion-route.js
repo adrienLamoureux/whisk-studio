@@ -1,6 +1,7 @@
 const { GetCommand } = require("@aws-sdk/lib-dynamodb");
 const { requireUserMiddleware, requireAdminMiddleware } = require("../lib/auth");
 const { getFlags } = require("../lib/feature-flags");
+const { spendGuardFor } = require("../lib/spend-middleware");
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `You are Hiyori, a warm, slightly whimsical AI companion living inside Whisk Studio — a creative AI image and story app.
@@ -86,6 +87,7 @@ const TRIGGER_LABELS = {
 };
 
 module.exports = (app, deps) => {
+  const llmGuard = spendGuardFor(deps, "bedrockLlmCall");
   const {
     bedrockClient,
     InvokeModelCommand,
@@ -100,7 +102,7 @@ module.exports = (app, deps) => {
   // Public endpoint — no auth required. If user is authenticated, req.user is
   // populated by the global optionalUserMiddleware in backend/index.js.
   // Body: { messages: [{role, content}], context?: { page, isAuthenticated }, modelId? }
-  app.post("/api/companion/chat", async (req, res) => {
+  app.post("/api/companion/chat", llmGuard, async (req, res) => {
     const body = req.body || {};
     const userId = req.user?.sub || null;
     const modelId = String(body.modelId || "hiyori_free");
@@ -255,7 +257,7 @@ module.exports = (app, deps) => {
   // ─── POST /api/companion/proactive ────────────────────────────────────────
   // Generates a short contextual proactive message. No auth required.
   // Body: { trigger: string, context: { page?, recentAction? } }
-  app.post("/api/companion/proactive", async (req, res) => {
+  app.post("/api/companion/proactive", llmGuard, async (req, res) => {
     const body = req.body || {};
     const trigger = String(body.trigger || "idle");
     const ctx = body.context || {};
@@ -306,7 +308,7 @@ module.exports = (app, deps) => {
   // Generates a character-initiated conversation message based on history/memory.
   // No auth required; uses DynamoDB memory for auth users, client session for anon.
   // Body: { messages?: [{role, content}], context?: { page, isAuthenticated }, modelId? }
-  app.post("/api/companion/initiative", async (req, res) => {
+  app.post("/api/companion/initiative", llmGuard, async (req, res) => {
     const { enableCompanionInitiative } = await getFlags(deps);
     if (!enableCompanionInitiative) {
       return res.status(503).json({ error: "Feature disabled" });

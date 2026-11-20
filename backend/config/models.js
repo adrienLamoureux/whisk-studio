@@ -1,3 +1,12 @@
+// Clip lengths. Used by both buildInput and durationSeconds so config/pricing.js
+// prices the clip that is actually requested.
+const WAN_22_NUM_FRAMES = 81;
+const WAN_22_FPS = 16;
+const VEO_31_FAST_DURATION_SECONDS = 8;
+const KLING_V26_DURATION_SECONDS = 5;
+const SEEDANCE_15_DURATION_SECONDS = 5;
+const NOVA_REEL_DURATION_SECONDS = 6;
+
 const DEFAULT_NEGATIVE_PROMPT =
   "low quality, worst quality, lowres, pixelated, jpeg artifacts, compression artifacts, blurry, blurry face, out of focus, oversharpened, grainy, noisy, dithering, flat shading, muddy colors, bad anatomy, bad proportions, tiny face, distant face, empty room, empty scene, scenery only, no person, no character, face obscured, faceless, cropped face, multiple characters, extra people, clone, twin, reflection, mirror, big eyes, wide eyes, sparkly eyes";
 const DEFAULT_GRADIO_NEGATIVE_PROMPT =
@@ -313,6 +322,7 @@ const replicateVideoConfig = {
   "wan-2.2-i2v-fast": {
     modelId: "wan-video/wan-2.2-i2v-fast",
     requiresImage: true,
+    durationSeconds: WAN_22_NUM_FRAMES / WAN_22_FPS,
     loraInjection: {
       scaleFieldNames: ["lora_scale_transformer", "lora_scale_transformer_2"],
     },
@@ -320,10 +330,10 @@ const replicateVideoConfig = {
       image: imageUrl,
       prompt,
       go_fast: true,
-      num_frames: 81,
+      num_frames: WAN_22_NUM_FRAMES,
       resolution: "480p",
       sample_shift: 12,
-      frames_per_second: 16,
+      frames_per_second: WAN_22_FPS,
       interpolate_output: false,
       lora_scale_transformer: 1,
       lora_scale_transformer_2: 1,
@@ -333,10 +343,11 @@ const replicateVideoConfig = {
   "veo-3.1-fast": {
     modelId: "google/veo-3.1-fast",
     requiresImage: true,
+    durationSeconds: VEO_31_FAST_DURATION_SECONDS,
     buildInput: ({ imageUrl, prompt, generateAudio }) => ({
       image: imageUrl,
       prompt,
-      duration: 8,
+      duration: VEO_31_FAST_DURATION_SECONDS,
       resolution: "720p",
       aspect_ratio: "16:9",
       generate_audio: generateAudio ?? true,
@@ -346,10 +357,11 @@ const replicateVideoConfig = {
   "kling-v2.6": {
     modelId: "kwaivgi/kling-v2.6",
     requiresImage: true,
+    durationSeconds: KLING_V26_DURATION_SECONDS,
     buildInput: ({ prompt, imageUrl, generateAudio }) => ({
       prompt,
       start_image: imageUrl,
-      duration: 5,
+      duration: KLING_V26_DURATION_SECONDS,
       aspect_ratio: "16:9",
       generate_audio: generateAudio ?? true,
       negative_prompt: "",
@@ -358,15 +370,23 @@ const replicateVideoConfig = {
   "seedance-1.5-pro": {
     modelId: "bytedance/seedance-1.5-pro",
     requiresImage: false,
+    durationSeconds: SEEDANCE_15_DURATION_SECONDS,
     buildInput: ({ prompt, generateAudio }) => ({
       fps: 24,
       prompt,
-      duration: 5,
+      duration: SEEDANCE_15_DURATION_SECONDS,
       resolution: "480p",
       aspect_ratio: "16:9",
       camera_fixed: false,
       generate_audio: generateAudio ?? false,
     }),
+  },
+};
+
+const bedrockVideoConfig = {
+  "nova-reel": {
+    modelId: "amazon.nova-reel-v1:1",
+    durationSeconds: NOVA_REEL_DURATION_SECONDS,
   },
 };
 
@@ -378,4 +398,5 @@ module.exports = {
   civitaiModelConfig,
   gradioSpaceConfig,
   replicateVideoConfig,
+  bedrockVideoConfig,
 };
